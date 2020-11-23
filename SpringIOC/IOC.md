@@ -25,14 +25,11 @@ Dans Spring, les objets gérés par le conteneur Spring IoC sont appelés beans 
 `org.springframework.context.ApplicationContext` représente le conteneur Spring IoC et est responsable d'instancier, de configurer et d'assembler les beans.  
   
 Le conteneur obtient ses instructions sur les objets en lisant les métadonnées de configuration.  
-Ces métadonnées sont représentées en XML, annotations Java ou code Java.  
 Elles spécifient les objets qui composent l'application et les interdépendances entre ces objets.  
   
-Dans les applications autonomes, il est courant de créer une instance de `ClassPathXmlApplicationContext` ou `FileSystemXmlApplicationContext`.  
-- XML est le format traditionnel pour définir les métadonnées de configuration,  
-- L'utilisation des annotations ou du code Java comme format de métadonnées peut être activée de manière déclarative avec un peu de configuration XML.  
-  
-Dans la plupart des applications, un code explicite n'est pas nécessaire pour instancier un conteneur Spring IoC.  
+Dans les applications autonomes, il est courant de créer une instance de `ClassPathXmlApplicationContext` ou `FileSystemXmlApplicationContext` avec le format XML traditionnel pour définir les métadonnées de configuration,  
+    
+Dans la plupart des applications, il n'est pas nécessaire d'instancier un conteneur Spring IoC avec un code explicite.  
 Par exemple, dans un scénario d'application Web, quelques lignes de descripteur Web dans le `web.xml` suffisent généralement.  
   
 > Fonctionnement de Spring :  
@@ -43,17 +40,15 @@ Par exemple, dans un scénario d'application Web, quelques lignes de descripteur
   
 Les métadonnées de configuration représentent la façon dont on indique au conteneur Spring d'instancier, de configurer et d'assembler les objets dans l'application.  
   
-Les métadonnées de configuration sont traditionnellement fournies dans un format XML.  
-Les autres formes de métadonnées avec le conteneur Spring sont :  
-- Configuration basée sur les annotations (Spring 2.5).  
-- Configuration Java (Spring 3.0) : Possibilité de définir des beans externes aux classes d'application en utilisant Java plutôt que des fichiers XML.  
+Outre le format XML traditionnel, les autres formes de métadonnées avec le conteneur Spring sont :  
+- La configuration basée sur les annotations (Spring 2.5).  
+- La configuration Java (Spring 3.0) qui définit des beans externes aux classes d'application en utilisant Java plutôt que des fichiers XML.  
   
 Les métadonnées de configuration XML configurent les beans comme des éléments `<bean/>` à l'intérieur d'un élément `<beans/>` de niveau supérieur.  
 La configuration Java utilise généralement des méthodes annotées `@Bean` dans une classe `@Configuration`.  
   
-En général, on définit des objets de service, d'accès aux données (DAO), de présentation tels que Struts Action, d'infrastructure tels que Hibernate SessionFactories, de files d'attente JMS.  
+En général, on définit des objets de service, d'accès aux données (DAO), de présentation ou d'infrastructure.  
 On ne configure pas d'objets de domaine à granularité fine dans le conteneur, car c'est la responsabilité des DAO et de la logique métier de créer ces objets.  
-L'intégration de Spring avec AspectJ peut cependant configurer des objets créés en dehors du conteneur IoC.  
   
   
 ### Instancier un conteneur  
@@ -67,10 +62,10 @@ ApplicationContext context = new ClassPathXmlApplicationContext("services.xml", 
 **Composer des métadonnées de configuration basées sur XML**  
   
 Il peut être utile que les définitions de bean s'étendent sur plusieurs fichiers XML.  
-Souvent, chaque fichier de configuration XML représente une couche ou un module logique dans votre architecture.  
+Souvent, chaque fichier de configuration XML représente une couche ou un module logique dans l'architecture.  
   
-Vous pouvez utiliser :  
-- soit le constructeur de contexte d'application pour charger des définitions de bean à partir de plusieurs emplacements XML.  
+On peut utiliser :  
+- soit le constructeur de `ApplicationContext` pour charger des définitions de bean à partir de plusieurs emplacements XML.  
 - soit l'élément `<import/>` pour charger des définitions de bean à partir d'autres fichiers.  
   
 ```xml  
@@ -98,15 +93,13 @@ Le contenu des fichiers importés y compris l'élément `<beans/>`, doit être c
 `ApplicationContext` est l'interface d'une fabrique capable de maintenir un registre de différents beans et de leurs dépendances.  
 En utilisant la méthode `T getBean(String name, Class<T> requiredType)`, on récupère des instances de beans.  
   
-`ApplicationContext` permet de lire les définitions de bean et d'y accéder, comme le montre l'exemple suivant:  
+`ApplicationContext` permet de lire les définitions de bean et d'y accéder  
   
 ```java  
 // créer et configurer des beans  
 ApplicationContext context = new ClassPathXmlApplicationContext("services.xml", "daos.xml");  
-  
 // récupérer l'instance configurée  
 PetStoreService service = context.getBean("petStore", PetStoreService.class);  
-  
 // utilise une instance configurée  
 List <String> userList = service.getUsernameList();  
 ```
@@ -122,8 +115,9 @@ context.refresh ();
 On peut mélanger et faire correspondre ces lecteurs délégués sur le même `ApplicationContext`, en lisant des définitions de bean à partir de diverses sources de configuration.  
   
 On peut ensuite utiliser `getBean` pour récupérer des instances de beans.  
+  
 Cependant, idéalement l'application ne devrait faire aucun appel à la méthode `ApplicationContext.getBean()` pour n'avoir aucune dépendance vis-à-vis des API Spring.  
-Par exemple, l'intégration de Spring avec les frameworks Web fournit une injection de dépendances pour divers composants tels que les contrôleurs, qui permet de déclarer une dépendance sur un bean spécifique via des métadonnées (telles qu'une annotation de câblage automatique).  
+Pour ceci, l'intégration de Spring avec les frameworks Web fournit par exemple une injection de dépendances pour divers composants tels que les contrôleurs, qui permet de déclarer une dépendance sur un bean spécifique via des métadonnées (telles qu'une annotation de câblage automatique).  
   
 ## Présentation des Beans  
   
@@ -149,8 +143,8 @@ Le tableau suivant le thème auquel se rattachent ces propriétés:
 | Destruction method | Destruction Callbacks |  
   
   
-En plus des définitions de bean, `ApplicationContext` permet également l'enregistrement d'objets créés en dehors du conteneur (par les utilisateurs).  
-Cela se fait en invoquant la méthode `getBeanFactory()` qui renvoie l'implémentation `DefaultListableBeanFactory`.  
+En plus des définitions de bean, `ApplicationContext` permet également l'enregistrement programmatique d'objets créés en dehors du conteneur.  
+Ceci se fait en invoquant la méthode `getBeanFactory()` qui renvoie l'implémentation `DefaultListableBeanFactory`.  
 `DefaultListableBeanFactory` prend en charge cet enregistrement via les méthodes `registerSingleton()` et `registerBeanDefinition()`.  
 Les métadonnées et singletons fournis manuellement doivent l'être le plus tôt possible, afin que le conteneur puisse les traiter correctement lors des étapes d'introspection.  
   
@@ -164,8 +158,8 @@ Dans les métadonnées de configuration XML:
 - L'attribut `id` permet de spécifier exactement un identifiant.  
 - Pour définir d'autres alias, les spécifier dans l'attribut name séparés par une virgule (,), un point-virgule (;) ou un espace blanc.  
   
-Si vous ne fournissez pas explicitement de nom ou d'identifiant, le conteneur génère un nom unique pour ce bean.  
-Cependant, pour faire référence à un bean par son nom via l'élément `ref` ou une recherche de type Service Locator, vous devez fournir un nom.  
+Si aucun identifiant n'est fourni, le conteneur génère un nom unique pour le bean.  
+Cependant, pour faire référence à un bean par son nom via l'élément `ref` ou une recherche de type Service Locator, il faut fournir un nom.  
 Les motivations pour ne pas fournir de nom sont liées à l'utilisation de beans internes et à l'autowiring de collaborateurs.  
   
 **Conventions de dénomination des Bean**  
@@ -174,18 +168,18 @@ C'est la convention Java standard pour les noms de champs lors de la dénominati
 Exemples: `accountManager`, `accountService`, `userDao`, `loginController`, etc.  
   
 Nommer les beans rend la configuration plus facile à lire et à comprendre.  
-De plus, si vous utilisez Spring AOP, cela aide beaucoup pour appliquer des greffons à un ensemble de beans liés par leur nom.  
+De plus, avec Spring AOP, le nommage facilite l'application des greffons à un ensemble de beans selon leur nom.  
   
 Pour les composants sans nom explicite, Spring génère des noms à partir du chemin de classe: il prend le nom de classe simple et transforme son caractère initial en minuscules.  
 Dans le cas spécial où les premier et deuxième caractères sont en majuscules, la casse d'origine est conservée.  
   
 **Aliaser un bean en dehors de la définition du bean**  
   
-Dans une définition de bean, on fournit plus d'un nom pour le bean en combinant un nom unique spécifié par l'attribut `id` et un nombre quelconque d'autres noms dans l'attribut `name`.  
+Dans une définition de bean, on peut fournir plus d'un nom en combinant un nom unique spécifié par l'attribut `id` et un nombre quelconque d'autres noms dans l'attribut `name`.  
   
 Cependant, spécifier tous les alias où le bean est réellement défini n'est pas toujours adéquat. Il est parfois souhaitable d'introduire un alias pour un bean défini ailleurs.  
-(Cas des grands systèmes où la configuration est répartie entre sous-systèmes, chaque sous-système ayant son propre ensemble de définitions d'objet).  
-Dans les métadonnées de configuration XML, vous pouvez utiliser l'élément `<alias/>` pour ce faire :  
+
+Dans les métadonnées de configuration XML, on utilise l'élément `<alias/>` pour ce faire :  
   
 ```xml  
 <alias name="fromName" alias="toName"/>  
@@ -205,19 +199,20 @@ Exceptions:
 - Héritage de définition de bean  
   
 Utilisation de la propriété `class`:  
-- Typiquement, pour spécifier la classe de bean dans le cas où le conteneur instancie directement le bean en appelant son constructeur (équivalent à l'opérateur `new`).  
-- Pour spécifier la classe contenant la méthode de fabrique statique appelée pour créer l'objet, dans le cas moins courant où le conteneur appelle une méthode de fabrique pour créer le bean.  
-	Le type d'objet renvoyé par l'appel de la méthode de fabrique statique peut être la même classe ou une autre classe entièrement.  
+- Soit pour spécifier la classe du bean dans le cas où le conteneur l'instancie directement en appelant son constructeur (équivalent à l'opérateur `new`).  
+- Soit pour spécifier la classe contenant la méthode de fabrique statique qui crée l'objet, dans le cas moins courant où le conteneur appelle une méthode de fabrique pour créer le bean.  
+	Le type d'objet renvoyé par l'appel de la méthode de fabrique statique peut être la même classe ou une tout autre classe.  
   
-*Noms de classe imbriquée*  
-Pour configurer une définition de bean relative à une classe imbriquée statique, vous devez utiliser le nom binaire de la classe imbriquée.  
+**Nom de classe imbriquée**  
+
+Pour configurer une définition de bean sur une classe imbriquée statique, il faut utiliser le nom binaire de la classe imbriquée.  
   
 Exemple : `com.example.SomeThing$OtherThing` pour une classe `OtherThing` imbriquée dans la classe `SomeThing` du package `com.example`
   
 **Instanciation avec un constructeur**  
   
-Pour créer un bean par l'approche constructeur, toutes les classes normales sont utilisables.  
-Cependant, selon le type d'IoC utilisé pour ce bean spécifique, on peut avoir besoin d'un constructeur par défaut (vide).  
+Pour créer un bean avec l'approche constructeur, toutes les classes normales sont utilisables.  
+Selon le type d'IoC utilisé pour ce bean spécifique, on peut avoir besoin d'un constructeur par défaut (vide).  
   
 En configuration XML, on spécifie le bean comme suit:  
   
@@ -540,7 +535,7 @@ L'utilisation de `<idref/>` pour spécifier un nom d'intercepteur évite de mal 
   
 L'élément `ref` est le dernier élément à l'intérieur d'un élément `<constructor-arg/>` ou `<property/>`.  
 La valeur de la propriété est spécifiée comme référence à un autre bean (un collaborateur).  
-La portée et la validation dépendent de si vous spécifiez l'ID de l'autre objet via l'attribut `bean` ou `parent`.  
+La portée et la validation dépendent de si l'ID du collaborateur est spécifié via l'attribut `bean` ou `parent`.  
   
 Spécifier le bean cible via l'attribut `bean` de la balise `<ref/>` crée une référence à n'importe quel bean dans le même conteneur ou conteneur parent.  
   
@@ -1181,8 +1176,8 @@ Pour implémenter un comportement de cycle de vie que Spring n'offre pas par dé
 Les rappels d'initialisation ou de destruction qui n'utilisent sont généralement des méthodes avec des noms tels que `init()`, `initialize()`, `dispose()`, etc.  
 Idéalement, ces noms sont normalisés dans un projet afin que tous les développeurs utilisent les mêmes noms de méthode et garantissent la cohérence.  
   
-Vous pouvez configurer le conteneur Spring pour rechercher les méthodes de rappel nommées sur l'ensemble des beans.  
-Supposons que les méthodes de rappel soient nommées `init()` à l'initialisation et `destroy()` à la destruction.  
+On peut configurer Spring pour rechercher les méthodes de rappel nommées sur l'ensemble des beans.  
+Exemple pour des méthodes de rappel nommées `init()` à l'initialisation et `destroy()` à la destruction:  
   
 ```java  
 public class DefaultBlogService implements BlogService {  
@@ -1922,7 +1917,8 @@ Définition du bean qualifié
   
 ### Utilisation de génériques comme qualifieurs de câblage automatique  
   
-En plus de l'annotation @Qualifier, vous pouvez utiliser des types génériques Java comme forme implicite de qualification. Par exemple, supposons que vous ayez la configuration suivante:  
+En plus de l'annotation `@Qualifier`, les types génériques Java peuvent être utilisés comme forme implicite de qualification.  
+Exemple, avec la configuration suivante:  
   
 ```java  
 @Configuration  
@@ -1938,7 +1934,7 @@ public class MyConfiguration {
 }  
 ```
   
-En supposant que les beans précédents implémentent une interface générique `Store<String>` et `Store<Integer>`, on peut `@Autowire` l'interface et le générique utilisé comme qualificatif  
+Si les beans précédents implémentent une interface générique `Store<String>` et `Store<Integer>`, on peut `@Autowire` l'interface avec le générique utilisé comme qualifieur  
   
 ```java  
 @Autowired  
