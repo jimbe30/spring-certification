@@ -162,7 +162,7 @@ Si aucun identifiant n'est fourni, le conteneur génère un nom unique pour le b
 Cependant, pour faire référence à un bean par son nom via l'élément `ref` ou une recherche de type Service Locator, il faut fournir un nom.  
 Les motivations pour ne pas fournir de nom sont liées à l'utilisation de beans internes et à l'autowiring de collaborateurs.  
   
-**Conventions de dénomination des Bean**  
+#### Conventions de dénomination des Bean  
   
 C'est la convention Java standard pour les noms de champs lors de la dénomination des beans.  
 Exemples: `accountManager`, `accountService`, `userDao`, `loginController`, etc.  
@@ -173,7 +173,7 @@ De plus, avec Spring AOP, le nommage facilite l'application des greffons à un e
 Pour les composants sans nom explicite, Spring génère des noms à partir du chemin de classe: il prend le nom de classe simple et transforme son caractère initial en minuscules.  
 Dans le cas spécial où les premier et deuxième caractères sont en majuscules, la casse d'origine est conservée.  
   
-**Aliaser un bean en dehors de la définition du bean**  
+#### Aliaser un bean en dehors de la définition du bean  
   
 Dans une définition de bean, on peut fournir plus d'un nom en combinant un nom unique spécifié par l'attribut `id` et un nombre quelconque d'autres noms dans l'attribut `name`.  
   
@@ -209,7 +209,7 @@ Pour configurer une définition de bean sur une classe imbriquée statique, il f
   
 Exemple : `com.example.SomeThing$OtherThing` pour une classe `OtherThing` imbriquée dans la classe `SomeThing` du package `com.example`
   
-**Instanciation avec un constructeur**  
+#### Instanciation avec un constructeur  
   
 Pour créer un bean avec l'approche constructeur, toutes les classes normales sont utilisables.  
 Selon le type d'IoC utilisé pour ce bean spécifique, on peut avoir besoin d'un constructeur par défaut (vide).  
@@ -220,48 +220,45 @@ En configuration XML, on spécifie le bean comme suit:
 <bean id="exampleBean" class="examples.ExampleBean"/>  
 ```
   
-**Instanciation avec une méthode de fabrique statique**  
+#### Instanciation avec une méthode de fabrique statique  
   
 Pour définir un bean avec une méthode de fabrique statique, l'attribut `class` spécifie la classe qui contient la méthode de fabrique et l'attribut nommé `factory-method` spécifie le nom de la méthode de fabrique elle-même.  
-Un cas d'utilisation de ce procédé est d'appeler les usines statiques du code ancien.  
-  
+L'utilisation de ce procédé se justifie pour appeler les méthodes statiques des fabriques existant dans le code ancien.  
 La définition ne spécifie pas le type de l'objet retourné  
   
 ```xml  
 <bean id="clientService" class="examples.ClientService" factory-method="createInstance"/>  
 ```
   
-**Instanciation à l'aide d'une méthode de fabrique d'instance**  
+#### Instanciation à l'aide d'une méthode de fabrique d'instance   
   
 Semblable à l'instanciation via une méthode de fabrique statique, l'instanciation avec une méthode de fabrique d'instance appelle une méthode non statique d'un bean existant du conteneur.  
 Pour utiliser ce mécanisme, l'attribut `class` est vide et l'attribut `factory-bean` spécifie le nom d'un bean qui contient la méthode à invoquer pour créer l'objet.  
   
 ```xml  
-<!-- le bean usine, qui contient une méthode appelée createInstance () -->  
-<bean id="serviceLocator" class="examples.DefaultServiceLocator">  
-    <!-- injecter toutes les dépendances requises par ce bean localisateur -->  
-</bean>  
+<!-- le bean de fabrique, qui contient une méthode appelée createInstance () -->  
+<bean id="serviceLocator" class="examples.DefaultServiceLocator"/>  
   
-<!-- le bean à créer via le bean usine -->  
+<!-- le bean à créer via le bean de fabrique -->  
 <bean id="clientService" factory-bean="serviceLocator" factory-method="createClientServiceInstance"/>  
 ```
   
-**Déterminer le type d'exécution d'un bean**  
+#### Déterminer le type d'exécution d'un bean  
   
 Le type d'exécution réel d'un bean spécifique n'est pas simple.  
-Une classe spécifiée dans la définition du bean est juste une référence de classe initiale qui peut conduire à un type d'exécution différent du bean, ou ne pas être définie du tout dans le cas d'une méthode de fabrique.  
-De plus, le proxy AOP peut encapsuler une instance de bean avec un proxy basé sur une interface avec une exposition limitée du type réel du bean cible (uniquement ses interfaces implémentées).  
+Une classe spécifiée dans la définition du bean est juste une référence de classe initiale qui, à l'exécution, peut conduire à un type différent, ou ne pas être définie du tout dans le cas d'une méthode de fabrique.  
+Par exemple, le proxy AOP peut encapsuler une instance de bean dans un proxy basé sur une interface avec une exposition limitée du type réel du bean cible (uniquement ses interfaces implémentées).  
   
 Pour connaître le type d'exécution réel d'un bean particulier, appeler `BeanFactory.getType` avec le nom du bean.  
   
   
 ## Dépendances  
   
-L'injection de dépendances est le moyen de passer de la définition d'un certain nombre de bean autonomes à une application exécutable où les objets collaborent pour atteindre un objectif ?  
+L'injection de dépendances est le moyen de passer de la définition d'un certain nombre de bean autonomes à une application exécutable où les objets collaborent pour atteindre un objectif   
   
 ### Injection de dépendance  
   
-L'injection de dépendances (DI) est un processus par lequel les objets définissent leurs dépendances uniquement via des arguments de constructeur, des paramètres d'une méthode de fabrique ou des attributs définis sur l'instance d'objet après sa construction ou renvoyé par une méthode de fabrique.  
+L'injection de dépendances (DI) est un processus par lequel les objets définissent leurs dépendances uniquement via des arguments de constructeur, des paramètres d'une méthode de fabrique ou des attributs définis sur l'instance d'objet après sa construction.  
 Le conteneur injecte ces dépendances lorsqu'il crée le bean.  
   
 Le code est plus propre avec le principe DI, et le découplage est plus efficace.  
@@ -270,26 +267,23 @@ Les classes sont plus faciles à tester, en particulier si les dépendances sont
   
 DI existe en deux variantes majeures: l'injection de dépendances basée sur un constructeur et l'injection de dépendances basée sur un Setter.  
   
-**Injection de dépendances basée sur le constructeur**  
+#### Injection de dépendances basée sur le constructeur  
   
 Le conteneur appelle un constructeur avec un certain nombre d'arguments, chacun représentant une dépendance.  
-L'appel d'une méthode de fabrique statique avec des arguments spécifiques pour construire le bean est presque équivalent.  
+L'appel d'une méthode de fabrique statique avec des arguments spécifiques pour construire le bean est équivalent.  
   
 ```java  
-public class SimpleMovieLister {  
-  
+public class SimpleMovieLister {    
     // the SimpleMovieLister has a dependency on a MovieFinder  
-    private MovieFinder movieFinder;  
-  
+    private MovieFinder movieFinder;    
     // a constructor so that the Spring container can inject a MovieFinder  
     public SimpleMovieLister(MovieFinder movieFinder) {  
         this.movieFinder = movieFinder;  
     }  
-    ...  
 }  
 ```
   
-*Résolution d'argument de constructeur*  
+**Résolution d'argument de constructeur**  
   
 La résolution d'argument se produit en utilisant le type de l'argument.  
 Si aucune ambiguïté n'existe dans les arguments d'une définition de bean, l'ordre des arguments de constructeur fournis dans une définition de bean est l'ordre dans lequel ces arguments sont passés au constructeur lorsque le bean est instancié.  
@@ -298,7 +292,6 @@ Si aucune ambiguïté n'existe dans les arguments d'une définition de bean, l'o
 package x.y;  
 public class ThingOne {  
     public ThingOne(ThingTwo thingTwo, ThingThree thingThree) {  
-        // ...  
     }  
 }  
 ```
@@ -319,16 +312,14 @@ Ainsi, pas besoin de spécifier explicitement les index ou les types d'argument 
   
 Lorsqu'un bean est référencé, le type est connu et la correspondance peut se faire.  
   
-Lorsqu'un type simple est utilisé, tel que `<value>true</value>`, Spring ne peut pas déterminer le type de la valeur et ne peut donc pas correspondre par type sans aide.  
+Lorsqu'un type simple est utilisé, tel que `<value>true</value>`, Spring ne peut pas déterminer le type de la valeur et ne peut donc pas faire correspondre le type sans aide.  
   
 ```java  
 package examples;  
   
-public class ExampleBean {  
-  
+public class ExampleBean {   
     private int years;  
-    private String ultimateAnswer;  
-  
+    private String ultimateAnswer;    
     public ExampleBean(int years, String ultimateAnswer) {  
         this.years = years;  
         this.ultimateAnswer = ultimateAnswer;  
@@ -336,7 +327,7 @@ public class ExampleBean {
 }  
 ```
   
-*Correspondance du type d'argument du constructeur*  
+**Correspondance du type d'argument du constructeur**  
   
 Le conteneur peut utiliser la correspondance de type avec des types simples  
   
@@ -347,7 +338,7 @@ Le conteneur peut utiliser la correspondance de type avec des types simples
 </bean>  
 ```
   
-*Index des arguments du constructeur*  
+**Index des arguments du constructeur**  
   
 Utiliser l'attribut `index` pour spécifier explicitement l'index des arguments  
   
@@ -360,7 +351,7 @@ Utiliser l'attribut `index` pour spécifier explicitement l'index des arguments
   
 La spécification d'un index résout l'ambiguïté également lorsqu'un constructeur a deux arguments du même type. L'index est basé sur 0.  
   
-*Nom de l'argument du constructeur*  
+**Nom de l'argument du constructeur**  
   
 Utiliser le nom du paramètre du constructeur pour lever l'ambiguïté  
   
@@ -371,8 +362,8 @@ Utiliser le nom du paramètre du constructeur pour lever l'ambiguïté
 </bean>  
 ```
   
-Pour que cela fonctionne, le code doit être compilé avec l'indicateur de débogage activé afin de rechercher le nom du paramètre auprès du constructeur.  
-On peut aussi utiliser l'annotation @ConstructorProperties pour nommer explicitement les arguments de constructeur.  
+Pour que ça fonctionne, le code doit être compilé avec l'indicateur de débogage activé afin de rechercher le nom du paramètre auprès du constructeur.  
+On peut aussi utiliser l'annotation `@ConstructorProperties` pour nommer explicitement les arguments de constructeur.  
   
 ```java  
 package examples;  
@@ -387,16 +378,14 @@ public class ExampleBean {
 }  
 ```
   
-**Injection de dépendances basée sur un setter**  
+#### Injection de dépendances basée sur un setter  
   
-Le conteneur appelle des `setter` sur les beans après leur instanciation.  
+Le conteneur appelle des `setter`s sur les beans après leur instanciation.  
   
 ```java  
-public class SimpleMovieLister {  
-  
+public class SimpleMovieLister {    
     // the SimpleMovieLister has a dependency on the MovieFinder  
-    private MovieFinder movieFinder;  
-  
+    private MovieFinder movieFinder;    
     // a setter method so that the Spring container can inject a MovieFinder  
     public void setMovieFinder(MovieFinder movieFinder) {  
         this.movieFinder = movieFinder;  
@@ -404,13 +393,13 @@ public class SimpleMovieLister {
 }  
 ```
   
-`ApplicationContext` prend en charge les DI basées sur les constructeurs et les setter.  
-Les dépendances configurées sous forme de `BeanDefinition` sont utilisées conjointement avec des `PropertyEditor` pour convertir les propriétés d'un format à un autre.  
+`ApplicationContext` prend en charge les DI basées sur les constructeurs et les setters.  
+Les dépendances configurées sous forme de `BeanDefinition` sont utilisées conjointement avec des `PropertyEditor`s pour convertir les propriétés d'un format à un autre.  
   
-**DI basée sur le constructeur ou sur le setter ?**  
+**DI basée sur le constructeur ou sur le setter**  
   
 Il est judicieux d'utiliser des constructeurs pour les dépendances obligatoires et des setters pour les dépendances facultatives.  
-(L'utilisation de `@Required` sur un setter rend la dépendance obligatoire mais l'injection par constructeur avec validation des arguments reste préférable).  
+L'utilisation de `@Required` sur un setter rend la dépendance obligatoire mais l'injection par constructeur avec validation des arguments reste préférable.  
   
 L'injection par constructeur :  
 - permet d'implémenter des objets immuables ;  
@@ -423,25 +412,24 @@ L'injection par setter est principalement utilisée pour les dépendances facult
 Des vérifications de non nullité doivent être effectuées partout où le code utilise la dépendance.  
 L'avantage de l'injection par setter est que les dépendances de la classe sont susceptibles d'être réinjectées ultérieurement.  
   
-  
-**Processus de résolution des dépendances**  
+#### Processus de résolution des dépendances  
   
 La résolution de dépendances s'effectue comme suit:  
-- `ApplicationContext` est créé et initialisé avec les données de config décrivant les beans.  
-- Pour chaque bean, les dépendances sont exprimées sous la forme de propriétés, d'arguments de constructeur ou d'arguments de la méthode static-factory. Ces dépendances sont fournies au bean.  
+- `ApplicationContext` est créé et initialisé avec les données de configuration décrivant les beans.  
+- Pour chaque bean, les dépendances sont exprimées sous la forme de propriétés, d'arguments de constructeur ou d'arguments de méthode de fabrique. Ces dépendances sont fournies au bean.  
 - Chaque argument de propriété ou de constructeur est une valeur explicite ou une référence à un autre bean.  
 - Chaque argument qui est une valeur est converti de son format spécifié à son type réel.  
-	Spring peut convertir une valeur fournie au format chaîne en tous les types intégrés, tels que int, long, String, boolean, etc.  
+	Spring peut convertir une valeur fournie au format chaîne dans tous les types intégrés, tels que int, long, String, boolean, etc.  
   
 Spring valide la configuration de chaque bean lors de la création du conteneur.  
 Les propriétés du bean elles-mêmes ne sont définies qu'après la création du bean.  
 Les beans de portée **singleton** et déclarés instantanés sont créés au chargement du conteneur (mode par défaut).  
 Les autres beans ne sont créés que lorsqu'ils sont invoqués.  
   
-La création d'un bean provoque potentiellement la création d'un graphe de beans représentant l'ensemble des dépendances.  
+La création d'un bean provoque la création d'un graphe de beans qui représente l'ensemble des dépendances.  
 Les incompatibilités de résolution entre ces dépendances peuvent apparaître tardivement, lors de la création d'un bean affecté comme dépendance.  
   
-**Dépendances circulaires**  
+#### Dépendances circulaires  
   
 Avec l'injection par constructeur, il peut se produire un scénario de dépendance circulaire insoluble.  
 Le conteneur Spring détecte cette référence circulaire à l'exécution et lève une exception `BeanCurrentlyInCreationException`.  
@@ -452,12 +440,12 @@ Ceci force l'un des beans à être injecté dans l'autre avant d'être complète
 Généralement Spring détecte les problèmes de configuration, tels que les références à des beans inexistants et des dépendances circulaires, au moment du chargement du conteneur.  
 Mais Spring définit les propriétés et résout les dépendances le plus tard possible, lorsque le bean est réellement créé..  
 Un conteneur Spring chargé correctement peut donc ultérieurement générer une exception lorsqu'un objet est demandé..  
-Les implémentations ApplicationContext pré-instancient les beans singleton par défaut pour se prémunir contre cette manisfestation tardive des problèmes.  
+Les implémentations `ApplicationContext` pré-instancient les beans singletons par défaut pour se prémunir contre cette manisfestation tardive des problèmes.  
   
 Si aucune dépendance circulaire n'existe, chaque bean collaborant est totalement configuré avant d'être injecté dans le bean dépendant.  
 Si le bean A a une dépendance sur le bean B, Spring configure complètement le bean B avant d'appeler la méthode setter sur le bean A.  
 En d'autres termes :  
-- le bean est instancié (s'il ne s'agit pas d'un singleton pré-instancié ),  
+- le bean est instancié (s'il ne s'agit pas d'un singleton pré-instancié),  
 - ses dépendances sont ensuite définies  
 - et enfin les méthodes de cycle de vie (`init-method` configurée) sont appelées  
   
@@ -652,6 +640,7 @@ Ce comportement de fusion s'applique de la même manière aux types `<list/>`, `
 Dans le cas spécifique de l'élément `<list/>`, la notion de collection ordonnée de valeurs est conservée. Les valeurs du parent précèdent toutes les valeurs de la liste enfant.  
   
 **Collection fortement typée**  
+  
 Avec l'introduction de types génériques dans Java 5, il est possible de déclarer un type pour une `Collection`. Afin d'injecter une `Collection` fortement typée dans un bean, on profite de la prise en charge de la conversion de type de Spring  
   
 #### Noms de propriété composés  
@@ -683,7 +672,9 @@ Pour exprimer une dépendance sur plusieurs beans, fournir une liste de noms de 
 ```
   
 L'attribut `depends-on` peut spécifier à la fois une dépendance d'initialisation et pour les singletons uniquement, une dépendance de destruction correspondante. Les beans qui définissent une relation dépendante avec un bean donné sont détruits en premier. Ainsi, on peut également contrôler l'ordre d'arrêt.  
+
 ### Beans à initialisation différéee  
+
 Par défaut, `ApplicationContext` crée instantanément les beans singleton lors du processus d'initialisation.  
 En général, cette pré-instanciation est souhaitable afin de à découvrir immédiatement les erreurs de configuration.  
 Lorsque ce comportement n'est pas souhaitable, la pré-instanciation d'un bean singleton peut être empêchée en spécifiant un einitialisation différée pour le bean.  
