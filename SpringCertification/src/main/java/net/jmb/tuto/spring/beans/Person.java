@@ -1,15 +1,17 @@
 package net.jmb.tuto.spring.beans;
 
+import java.util.Date;
+
 public class Person {
 	
 	protected String name;
-	protected int birthDate;
+	protected Date birthDate;
 	protected Adress adress;
 	
-	public int getBirthDate() {
+	public Date getBirthDate() {
 		return birthDate;
 	}
-	public void setBirthDate(int birthDate) {
+	public void setBirthDate(Date birthDate) {
 		this.birthDate = birthDate;
 	}
 	public Adress getAdress() {

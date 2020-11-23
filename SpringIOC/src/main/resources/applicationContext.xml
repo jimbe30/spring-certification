@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- Beans métiers -->
+
+	<bean id="adress" class="net.jmb.tuto.spring.ioc.beans.Adress">
+		<constructor-arg value="73, traverse Régny" />
+		<constructor-arg value="13009" />
+		<constructor-arg value="Marseille" />
+	</bean>
+
+
+	<bean id="person" class="net.jmb.tuto.spring.ioc.beans.Person" lazy-init="true">
+		<constructor-arg value="Arthur" />
+		<constructor-arg type="java.lang.String" value="1892-04-01" />
+		<constructor-arg ref="adress" />
+	</bean>
+	
+
+
+</beans>
