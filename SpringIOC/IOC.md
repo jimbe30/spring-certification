@@ -1,110 +1,95 @@
 # Conteneur Spring IoC  
   
-Le principe d'inversion de contrôle (IoC) également connu sous le nom d'injection de dépendance (DI) est un processus par lequel les objets définissent leurs dépendances uniquement via :  
+L'inversion de contrôle (IoC) est un processus par lequel les objets définissent leurs dépendances uniquement via :  
 - des arguments de constructeur,  
 - des arguments d'une méthode de fabrique  
-- ou des propriétés définies sur l'instance d'objet après sa construction ou son retour d'une méthode de fabrique.  
+- ou des propriétés définies sur l'instance d'objet après sa construction.  
   
-Le conteneur injecte ensuite ces dépendances lorsqu'il crée le bean.  
-Ce processus est fondamentalement l'inverse du bean contrôlant lui-même ses dépendances en utilisant l'instanciation directe ou un mécanisme tel que le Service Locator.  
+Le conteneur injecte ces dépendances lorsqu'il crée l'objet.  
+Ce processus est l'inverse du contrôle des dépendances par l'objet lui-même en utilisant l'instanciation directe ou un mécanisme tel que le `Service Locator`.  
   
-Les packages `org.springframework.beans` et `org.springframework.context` constituent la base du conteneur IoC de Spring.  
-L'interface `BeanFactory` fournit un mécanisme de configuration avancé capable de gérer tout type d'objet.  
+L'interface `BeanFactory` fournit un mécanisme de configuration capable de gérer tout type d'objet.  
 `ApplicationContext` est une sous-interface de `BeanFactory` qui ajoute:  
-- Une intégration plus facile avec les fonctionnalités AOP de Spring  
-- Une gestion des ressources de messages (pour une utilisation dans l'internationalisation)  
+- Une intégration avec les fonctionnalités AOP de Spring  
+- Une gestion des ressources de messages (avec l'internationalisation)  
 - Une publication d'événements  
-- Des contextes spécifiques à la couche applicative tels que `WebApplicationContext` à utiliser dans les applications Web.  
+- Des contextes spécifiques tels que `WebApplicationContext` utilisé dans les applications Web.  
   
 Dans Spring, les objets gérés par le conteneur Spring IoC sont appelés beans :  
 - Un bean est un objet instancié, assemblé et géré par un conteneur Spring IoC.  
 - Les beans et leurs dépendances sont spécifiés dans les métadonnées de configuration utilisées par le conteneur.  
   
-## Présentation du conteneur  
+## Présentation du conteneur `ApplicationContext`  
   
 `org.springframework.context.ApplicationContext` représente le conteneur Spring IoC et est responsable d'instancier, de configurer et d'assembler les beans.  
   
-Le conteneur obtient ses instructions sur les objets en lisant les métadonnées de configuration.  
-Elles spécifient les objets qui composent l'application et les interdépendances entre ces objets.  
+Des métadonnées de configuration spécifient au conteneur les objets qui composent l'application et les interdépendances entre ces objets.  
   
-Dans les applications autonomes, il est courant de créer une instance de `ClassPathXmlApplicationContext` ou `FileSystemXmlApplicationContext` avec le format XML traditionnel pour définir les métadonnées de configuration,  
+Dans les applications autonomes, une instance de `ClassPathXmlApplicationContext` ou de `FileSystemXmlApplicationContext` est créée en lien avec des métadonnées de configuration au format XML traditionnel.  
     
-Dans la plupart des applications, il n'est pas nécessaire d'instancier un conteneur Spring IoC avec un code explicite.  
-Par exemple, dans un scénario d'application Web, quelques lignes de descripteur Web dans le `web.xml` suffisent généralement.  
-  
-> Fonctionnement de Spring :  
-> Les classes d'application sont combinées avec les métadonnées de configuration de sorte qu'après l'initialisation de `ApplicationContext`, l'application est entièrement configurée et exécutable.  
+Les classes de l'application sont combinées avec les métadonnées de configuration de sorte qu'après l'initialisation de `ApplicationContext`, l'application est entièrement configurée et exécutable.  
   
   
 ### Métadonnées de configuration  
   
-Les métadonnées de configuration représentent la façon dont on indique au conteneur Spring d'instancier, de configurer et d'assembler les objets dans l'application.  
+Les métadonnées de configuration indiquent au conteneur Spring d'instancier, de configurer et d'assembler les objets dans l'application.  
   
 Outre le format XML traditionnel, les autres formes de métadonnées avec le conteneur Spring sont :  
 - La configuration basée sur les annotations (Spring 2.5).  
-- La configuration Java (Spring 3.0) qui définit des beans externes aux classes d'application en utilisant Java plutôt que des fichiers XML.  
+- La configuration Java (Spring 3.0) qui définit des beans à l'extérieur des classes de l'application en utilisant Java plutôt que des fichiers XML.  
   
 Les métadonnées de configuration XML configurent les beans comme des éléments `<bean/>` à l'intérieur d'un élément `<beans/>` de niveau supérieur.  
 La configuration Java utilise généralement des méthodes annotées `@Bean` dans une classe `@Configuration`.  
   
 En général, on définit des objets de service, d'accès aux données (DAO), de présentation ou d'infrastructure.  
-On ne configure pas d'objets de domaine à granularité fine dans le conteneur, car c'est la responsabilité des DAO et de la logique métier de créer ces objets.  
+On ne configure pas d'objets de domaine à granularité fine dans le conteneur, car c'est la responsabilité de la logique métier de créer ces objets.  
   
   
 ### Instancier un conteneur  
   
-Le ou les chemins d'emplacement fournis à un constructeur `ApplicationContext` permettent au conteneur de charger des métadonnées de configuration à partir de ressources externes, telles que le système de fichiers local, Java CLASSPATH, etc.  
+Les chemins d'emplacement fournis à `ApplicationContext` permettent au conteneur de charger des métadonnées de configuration à partir de ressources externes, telles que le système de fichiers local, le classpath java, etc.  
   
 ```java  
 ApplicationContext context = new ClassPathXmlApplicationContext("services.xml", "daos.xml");  
 ```
   
-**Composer des métadonnées de configuration basées sur XML**  
+Il n'est pas toujours nécessaire d'instancier un conteneur Spring IoC explicitement.  
+Par exemple, dans une application Web, quelques lignes de descripteur dans le `web.xml` suffisent.  
   
-Il peut être utile que les définitions de bean s'étendent sur plusieurs fichiers XML.  
-Souvent, chaque fichier de configuration XML représente une couche ou un module logique dans l'architecture.  
+### Composer plusieurs sources de configuration XML  
   
+Il est parfois utile de répartir les définitions de bean dans plusieurs fichiers XML.  
 On peut utiliser :  
-- soit le constructeur de `ApplicationContext` pour charger des définitions de bean à partir de plusieurs emplacements XML.  
-- soit l'élément `<import/>` pour charger des définitions de bean à partir d'autres fichiers.  
+- Soit le constructeur de `ApplicationContext` pour charger des définitions de bean à partir de plusieurs emplacements XML.  
+- Soit l'élément `<import/>` pour charger des définitions de bean à partir d'autres fichiers.  
   
 ```xml  
 <beans>  
     <import resource="services.xml"/>  
     <import resource="resources/messageSource.xml"/>  
-    <import resource="/resources/themeSource.xml"/>  
-  
+    <import resource="/resources/themeSource.xml"/>    
     <bean id="bean1" class="..."/>  
     <bean id="bean2" class="..."/>  
 </beans>  
 ```
   
-Tous les chemins sont relatifs au fichier effectuant l'import.  
-Une barre oblique principale est ignorée et il est préférable de ne pas l'utiliser du tout.  
-Le contenu des fichiers importés y compris l'élément `<beans/>`, doit être conforme au schéma Spring.  
+Les chemins sont toujours relatifs au fichier effectuant l'import et le cas échéant, la présence d'une barre oblique principale est ignorée.  
+Le contenu des fichiers importés doit être conforme au schéma Spring.  
   
 > On peut utiliser des emplacements pleinement qualifiés au lieu de chemins relatifs: par exemple, `file:C:/config/services.xml` ou `classpath:/config/services.xml`.  
-> Cependant, ça revient à associer la configuration de l'application à des emplacements absolus spécifiques.  
-> Il est préférable de conserver une indirection par exemple, via des espaces réservés "${...}" résolus par rapport aux propriétés système JVM à l'exécution.  
-  
   
 ### Utilisation du conteneur  
   
-`ApplicationContext` est l'interface d'une fabrique capable de maintenir un registre de différents beans et de leurs dépendances.  
-En utilisant la méthode `T getBean(String name, Class<T> requiredType)`, on récupère des instances de beans.  
-  
-`ApplicationContext` permet de lire les définitions de bean et d'y accéder  
+`ApplicationContext` est l'interface d'une fabrique qui maintient un registre des beans et de leurs dépendances.  
+La méthode `T getBean(String name, Class<T> requiredType)` permet de récupérer une instance de beans et d'y accéder.  
   
 ```java  
-// créer et configurer des beans  
 ApplicationContext context = new ClassPathXmlApplicationContext("services.xml", "daos.xml");  
-// récupérer l'instance configurée  
 PetStoreService service = context.getBean("petStore", PetStoreService.class);  
-// utilise une instance configurée  
 List <String> userList = service.getUsernameList();  
 ```
   
-Une variante flexible est `GenericApplicationContext` en combinaison avec des lecteurs délégués (exemple: `XmlBeanDefinitionReader` pour les fichiers XML):  
+Une variante est `GenericApplicationContext` qui se combine avec des lecteurs délégués (exemple: `XmlBeanDefinitionReader` pour les fichiers XML):  
   
 ```java  
 GenericApplicationContext context = new GenericApplicationContext();  
@@ -112,41 +97,22 @@ new XmlBeanDefinitionReader(context).loadBeanDefinitions("services.xml", "daos.x
 context.refresh ();  
 ```
   
-On peut mélanger et faire correspondre ces lecteurs délégués sur le même `ApplicationContext`, en lisant des définitions de bean à partir de diverses sources de configuration.  
+On peut mélanger différents types de lecteurs délégués sur le même `ApplicationContext` qui lit ainsi des définitions de bean depuis diverses sources de configuration.  
   
-On peut ensuite utiliser `getBean` pour récupérer des instances de beans.  
-  
-Cependant, idéalement l'application ne devrait faire aucun appel à la méthode `ApplicationContext.getBean()` pour n'avoir aucune dépendance vis-à-vis des API Spring.  
-Pour ceci, l'intégration de Spring avec les frameworks Web fournit par exemple une injection de dépendances pour divers composants tels que les contrôleurs, qui permet de déclarer une dépendance sur un bean spécifique via des métadonnées (telles qu'une annotation de câblage automatique).  
-  
+ 
 ## Présentation des Beans  
   
-Dans le conteneur Spring lui-même, les définitions de beans sont représentées comme des objets `BeanDefinition`, qui contiennent entre autres les métadonnées suivantes:  
+Dans Spring, les définitions de beans sont représentées comme des objets `BeanDefinition`, qui contiennent les métadonnées suivantes:  
 - Un nom de classe qualifié : généralement, la classe d'implémentation réelle du bean en cours de définition.  
 - Les éléments comportementaux du bean au sein du conteneur (portée, callbacks de cycle de vie, etc...)  
 - Les références à d'autres beans appelés collaborateurs ou dépendances.  
-- Les autres paramètres à définir dans l'objet nouvellement créé (exemple: la taille limite ou le nombre de connexions max dans un bean qui gère un pool de connexions).  
+- Les autres paramètres à définir dans l'objet nouvellement créé sous forme de valeurs explicites.  
   
-Ces métadonnées sont un ensemble de propriétés qui constituent chaque définition de bean.  
-Le tableau suivant le thème auquel se rattachent ces propriétés:  
-  
-| Propriété | Thème |  
-|--|--|  
-| Class | Instantiating Beans |  
-| Name | Naming Beans |  
-| Scope | Bean Scopes |  
-| Constructor arguments | Dependency Injection |  
-| Properties | Dependency Injection |  
-| Autowiring mode | Autowiring Collaborators |  
-| Lazy initialization mode | Lazy-initialized Beans |  
-| Initialization method | Initialization Callbacks |  
-| Destruction method | Destruction Callbacks |  
-  
+Ces métadonnées sont un ensemble de propriétés qui constituent la définition d'un bean.  
   
 En plus des définitions de bean, `ApplicationContext` permet également l'enregistrement programmatique d'objets créés en dehors du conteneur.  
-Ceci se fait en invoquant la méthode `getBeanFactory()` qui renvoie l'implémentation `DefaultListableBeanFactory`.  
-`DefaultListableBeanFactory` prend en charge cet enregistrement via les méthodes `registerSingleton()` et `registerBeanDefinition()`.  
-Les métadonnées et singletons fournis manuellement doivent l'être le plus tôt possible, afin que le conteneur puisse les traiter correctement lors des étapes d'introspection.  
+Pour ceci, la méthode `getBeanFactory()` renvoie l'implémentation `DefaultListableBeanFactory` qui définit les méthodes `registerSingleton()` et `registerBeanDefinition()`.  
+Les beans référencés manuellement doivent l'être le plus tôt possible pour être traités correctement lors des étapes d'introspection.  
   
   
 ### Nommer les beans  
@@ -159,26 +125,24 @@ Dans les métadonnées de configuration XML:
 - Pour définir d'autres alias, les spécifier dans l'attribut name séparés par une virgule (,), un point-virgule (;) ou un espace blanc.  
   
 Si aucun identifiant n'est fourni, le conteneur génère un nom unique pour le bean.  
-Cependant, pour faire référence à un bean par son nom via l'élément `ref` ou une recherche de type Service Locator, il faut fournir un nom.  
-Les motivations pour ne pas fournir de nom sont liées à l'utilisation de beans internes et à l'autowiring de collaborateurs.  
+Cependant, pour faire référence à un bean par son nom via l'élément `ref` ou une recherche de type `Service Locator`, il faut fournir un nom.  
   
 #### Conventions de dénomination des Bean  
   
-C'est la convention Java standard pour les noms de champs lors de la dénomination des beans.  
+C'est la convention Java standard pour les noms de propriétés de beans.  
 Exemples: `accountManager`, `accountService`, `userDao`, `loginController`, etc.  
   
 Nommer les beans rend la configuration plus facile à lire et à comprendre.  
 De plus, avec Spring AOP, le nommage facilite l'application des greffons à un ensemble de beans selon leur nom.  
   
-Pour les composants sans nom explicite, Spring génère des noms à partir du chemin de classe: il prend le nom de classe simple et transforme son caractère initial en minuscules.  
-Dans le cas spécial où les premier et deuxième caractères sont en majuscules, la casse d'origine est conservée.  
+Pour les composants sans nom explicite, Spring génère un nom automatiquement : c'est le nom de classe simple avec son caractère initial en minuscules.  
+Dans le cas où les 2 premiers caractères sont en majuscules, la casse d'origine est conservée.  
   
 #### Aliaser un bean en dehors de la définition du bean  
   
-Dans une définition de bean, on peut fournir plus d'un nom en combinant un nom unique spécifié par l'attribut `id` et un nombre quelconque d'autres noms dans l'attribut `name`.  
+Dans une définition de bean, on peut fournir plusieurs noms en combinant un nom unique dans l'attribut `id` et un nombre quelconque d'autres noms dans l'attribut `name`.  
   
-Cependant, spécifier tous les alias où le bean est réellement défini n'est pas toujours adéquat. Il est parfois souhaitable d'introduire un alias pour un bean défini ailleurs.  
-
+Spécifier tous les alias dans la définition de bean n'est pas toujours adéquat et il est parfois souhaitable d'introduire un alias pour un bean défini ailleurs.  
 Dans les métadonnées de configuration XML, on utilise l'élément `<alias/>` pour ce faire :  
   
 ```xml  
@@ -189,25 +153,17 @@ Dans ce cas, un bean dans le même conteneur nommé `fromName` peut également �
   
 ### Instancier des beans  
   
-Une définition de bean est essentiellement une spécification pour créer un ou plusieurs objets.  
 Le conteneur examine la spécification du bean lorsqu'il est demandé pour créer ou acquérir l'objet réel.  
-  
-En configuration XML, on spécifie le type d'objet à instancier dans l'attribut `class` de l'élément `<bean/>`.  
-Cet attribut (qui, en interne, est une propriété sur une instance de `BeanDefinition`) est généralement obligatoire.  
-Exceptions:  
-- Instanciation à l'aide d'une méthode Instance Factory  
+
+En configuration XML, le type d'objet est spécifié dans l'attribut `class` de l'élément `<bean/>`.  
+Cet attribut est obligatoire, sauf ces exceptions:  
+- Instanciation à l'aide d'une méthode `Instance Factory`  
 - Héritage de définition de bean  
   
 Utilisation de la propriété `class`:  
 - Soit pour spécifier la classe du bean dans le cas où le conteneur l'instancie directement en appelant son constructeur (équivalent à l'opérateur `new`).  
 - Soit pour spécifier la classe contenant la méthode de fabrique statique qui crée l'objet, dans le cas moins courant où le conteneur appelle une méthode de fabrique pour créer le bean.  
-	Le type d'objet renvoyé par l'appel de la méthode de fabrique statique peut être la même classe ou une tout autre classe.  
-  
-**Nom de classe imbriquée**  
-
-Pour configurer une définition de bean sur une classe imbriquée statique, il faut utiliser le nom binaire de la classe imbriquée.  
-  
-Exemple : `com.example.SomeThing$OtherThing` pour une classe `OtherThing` imbriquée dans la classe `SomeThing` du package `com.example`
+	Le type d'objet renvoyé par l'appel de la méthode de fabrique statique peut être une tout autre classe.  
   
 #### Instanciation avec un constructeur  
   
@@ -222,13 +178,14 @@ En configuration XML, on spécifie le bean comme suit:
   
 #### Instanciation avec une méthode de fabrique statique  
   
-Pour définir un bean avec une méthode de fabrique statique, l'attribut `class` spécifie la classe qui contient la méthode de fabrique et l'attribut nommé `factory-method` spécifie le nom de la méthode de fabrique elle-même.  
-L'utilisation de ce procédé se justifie pour appeler les méthodes statiques des fabriques existant dans le code ancien.  
-La définition ne spécifie pas le type de l'objet retourné  
+Avec une méthode de fabrique statique, l'attribut `class` spécifie la classe qui contient la méthode de fabrique et l'attribut `factory-method` spécifie le nom de la méthode de fabrique elle-même.  
+Le type de l'objet retourné n'est pas spécifié.  
   
 ```xml  
 <bean id="clientService" class="examples.ClientService" factory-method="createInstance"/>  
 ```
+
+Cette façon de procéder est justifiée pour continuer d'utiliser des méthodes de fabriques existant dans l'ancien code.  
   
 #### Instanciation à l'aide d'une méthode de fabrique d'instance   
   
@@ -246,28 +203,28 @@ Pour utiliser ce mécanisme, l'attribut `class` est vide et l'attribut `factory-
 #### Déterminer le type d'exécution d'un bean  
   
 Le type d'exécution réel d'un bean spécifique n'est pas simple.  
-Une classe spécifiée dans la définition du bean est juste une référence de classe initiale qui, à l'exécution, peut conduire à un type différent, ou ne pas être définie du tout dans le cas d'une méthode de fabrique.  
-Par exemple, le proxy AOP peut encapsuler une instance de bean dans un proxy basé sur une interface avec une exposition limitée du type réel du bean cible (uniquement ses interfaces implémentées).  
+Une classe spécifiée dans la définition du bean est juste une référence de classe qui, à l'exécution, peut conduire à un type différent, ou ne pas être définie du tout dans le cas d'une méthode de fabrique.  
+De plus le proxy AOP peut encapsuler une instance de bean dans un proxy qui expose de façon limitée le type réel du bean cible (uniquement ses interfaces implémentées).  
   
 Pour connaître le type d'exécution réel d'un bean particulier, appeler `BeanFactory.getType` avec le nom du bean.  
   
   
 ## Dépendances  
   
-L'injection de dépendances est le moyen de passer de la définition d'un certain nombre de bean autonomes à une application exécutable où les objets collaborent pour atteindre un objectif   
+L'injection de dépendances fait passer de la définition d'un ensemble de beans autonomes à une application exécutable où les objets collaborent pour atteindre un objectif   
   
 ### Injection de dépendance  
   
-L'injection de dépendances (DI) est un processus par lequel les objets définissent leurs dépendances uniquement via des arguments de constructeur, des paramètres d'une méthode de fabrique ou des attributs définis sur l'instance d'objet après sa construction.  
-Le conteneur injecte ces dépendances lorsqu'il crée le bean.  
+Par ce mécanisme, c'est le conteneur qui injecte ses dépendances lorsqu'il crée le bean.    
+- Le code est plus propre, plus lisible et mieux structuré 
+- Le découplage est plus efficace  
+- Les classes sont plus faciles à tester, en particulier si les dépendances sont des interfaces, ce qui permet d'utiliser des implémentations de simulation dans les tests unitaires.  
   
-Le code est plus propre avec le principe DI, et le découplage est plus efficace.  
-L'objet ne recherche pas ses dépendances et ne connaît ni l'emplacement ni la classe des dépendances.  
-Les classes sont plus faciles à tester, en particulier si les dépendances sont des interfaces, ce qui permet d'utiliser des implémentations de simulation dans les tests unitaires.  
+Deux variantes majeures existent:
+- l'injection de dépendances basée sur un constructeur
+- et l'injection de dépendances basée sur un Setter.  
   
-DI existe en deux variantes majeures: l'injection de dépendances basée sur un constructeur et l'injection de dépendances basée sur un Setter.  
-  
-#### Injection de dépendances basée sur le constructeur  
+#### Injection de dépendances par constructeur  
   
 Le conteneur appelle un constructeur avec un certain nombre d'arguments, chacun représentant une dépendance.  
 L'appel d'une méthode de fabrique statique avec des arguments spécifiques pour construire le bean est équivalent.  
@@ -291,13 +248,11 @@ Si aucune ambiguïté n'existe dans les arguments d'une définition de bean, l'o
 ```java  
 package x.y;  
 public class ThingOne {  
-    public ThingOne(ThingTwo thingTwo, ThingThree thingThree) {  
-    }  
+    public ThingOne(ThingTwo thingTwo, ThingThree thingThree) { ... }  
 }  
 ```
   
-Si ThingTwo et ThingThree ne sont pas liées par héritage, aucune ambiguïté n'existe.  
-Ainsi, pas besoin de spécifier explicitement les index ou les types d'argument du constructeur dans l'élément `<constructor-arg/>`.  
+Aucune ambiguïté n'existe et ainsi, pas besoin de spécifier les index ou les types d'argument du constructeur dans l'élément `<constructor-arg/>`.  
   
 ```xml  
 <beans>  
@@ -327,7 +282,7 @@ public class ExampleBean {
 }  
 ```
   
-**Correspondance du type d'argument du constructeur**  
+**Correspondance de type d'argument du constructeur**  
   
 Le conteneur peut utiliser la correspondance de type avec des types simples  
   
@@ -368,35 +323,28 @@ On peut aussi utiliser l'annotation `@ConstructorProperties` pour nommer explici
 ```java  
 package examples;  
   
-public class ExampleBean {  
-  
+public class ExampleBean {    
     @ConstructorProperties({"years", "ultimateAnswer"})  
     public ExampleBean(int years, String ultimateAnswer) {  
-        this.years = years;  
-        this.ultimateAnswer = ultimateAnswer;  
+        ...
     }  
 }  
 ```
   
-#### Injection de dépendances basée sur un setter  
+#### Injection de dépendances par `setter`  
   
 Le conteneur appelle des `setter`s sur les beans après leur instanciation.  
   
 ```java  
 public class SimpleMovieLister {    
-    // the SimpleMovieLister has a dependency on the MovieFinder  
     private MovieFinder movieFinder;    
-    // a setter method so that the Spring container can inject a MovieFinder  
     public void setMovieFinder(MovieFinder movieFinder) {  
         this.movieFinder = movieFinder;  
     }  
 }  
 ```
   
-`ApplicationContext` prend en charge les DI basées sur les constructeurs et les setters.  
-Les dépendances configurées sous forme de `BeanDefinition` sont utilisées conjointement avec des `PropertyEditor`s pour convertir les propriétés d'un format à un autre.  
-  
-**DI basée sur le constructeur ou sur le setter**  
+**DI par constructeur ou par setter**  
   
 Il est judicieux d'utiliser des constructeurs pour les dépendances obligatoires et des setters pour les dépendances facultatives.  
 L'utilisation de `@Required` sur un setter rend la dépendance obligatoire mais l'injection par constructeur avec validation des arguments reste préférable.  
@@ -417,39 +365,36 @@ L'avantage de l'injection par setter est que les dépendances de la classe sont 
 La résolution de dépendances s'effectue comme suit:  
 - `ApplicationContext` est créé et initialisé avec les données de configuration décrivant les beans.  
 - Pour chaque bean, les dépendances sont exprimées sous la forme de propriétés, d'arguments de constructeur ou d'arguments de méthode de fabrique. Ces dépendances sont fournies au bean.  
-- Chaque argument de propriété ou de constructeur est une valeur explicite ou une référence à un autre bean.  
-- Chaque argument qui est une valeur est converti de son format spécifié à son type réel.  
-	Spring peut convertir une valeur fournie au format chaîne dans tous les types intégrés, tels que int, long, String, boolean, etc.  
+- Chaque propriété ou argument de constructeur est une valeur explicite ou une référence à un autre bean.  
+	- Chaque argument qui est une valeur est converti de son format spécifié à son type réel avec un `PropertyEditor`.  
+	- Spring peut convertir une valeur `String` dans tous les types intégrés (`int`, `long`, `String`, `boolean`, etc).  
+- Les propriétés du bean elles-mêmes ne sont définies qu'après la création du bean.  
   
-Spring valide la configuration de chaque bean lors de la création du conteneur.  
-Les propriétés du bean elles-mêmes ne sont définies qu'après la création du bean.  
-Les beans de portée **singleton** et déclarés instantanés sont créés au chargement du conteneur (mode par défaut).  
-Les autres beans ne sont créés que lorsqu'ils sont invoqués.  
-  
-La création d'un bean provoque la création d'un graphe de beans qui représente l'ensemble des dépendances.  
-Les incompatibilités de résolution entre ces dépendances peuvent apparaître tardivement, lors de la création d'un bean affecté comme dépendance.  
+Spring valide la configuration de chaque bean lors de la création du conteneur:  
+- Les beans de portée **singleton** et déclarés instantanés (mode par défaut) sont créés au chargement du conteneur.  
+- Les autres beans ne sont créés que lorsqu'ils sont invoqués.  
+- La création d'un bean provoque la création d'un graphe de beans qui représente l'ensemble des dépendances.  
   
 #### Dépendances circulaires  
   
-Avec l'injection par constructeur, il peut se produire un scénario de dépendance circulaire insoluble.  
+Avec l'injection par constructeur, un scénario de dépendance circulaire insoluble peut se produire.  
 Le conteneur Spring détecte cette référence circulaire à l'exécution et lève une exception `BeanCurrentlyInCreationException`.  
   
-Une solution possible esr de configurer les dépendances circulaires avec l'injection par setter.  
-Ceci force l'un des beans à être injecté dans l'autre avant d'être complètement initialisé lui-même.  
-  
-Généralement Spring détecte les problèmes de configuration, tels que les références à des beans inexistants et des dépendances circulaires, au moment du chargement du conteneur.  
-Mais Spring définit les propriétés et résout les dépendances le plus tard possible, lorsque le bean est réellement créé..  
-Un conteneur Spring chargé correctement peut donc ultérieurement générer une exception lorsqu'un objet est demandé..  
-Les implémentations `ApplicationContext` pré-instancient les beans singletons par défaut pour se prémunir contre cette manisfestation tardive des problèmes.  
-  
+La solution est de configurer les dépendances circulaires avec l'injection par setter.  
+Ceci permet à l'un des beans d'être injecté dans l'autre avant d'être complètement initialisé lui-même.  
+
 Si aucune dépendance circulaire n'existe, chaque bean collaborant est totalement configuré avant d'être injecté dans le bean dépendant.  
-Si le bean A a une dépendance sur le bean B, Spring configure complètement le bean B avant d'appeler la méthode setter sur le bean A.  
-En d'autres termes :  
-- le bean est instancié (s'il ne s'agit pas d'un singleton pré-instancié),  
+Si le bean A a une dépendance sur le bean B, Spring configure complètement le bean B avant d'appeler la méthode setter sur le bean A :  
+- le bean est instancié (s'il ne s'agit pas d'un singleton préinstancié),  
 - ses dépendances sont ensuite définies  
 - et enfin les méthodes de cycle de vie (`init-method` configurée) sont appelées  
+ 
+Généralement les problèmes de configuration, tels que les références à des beans inexistants ou les dépendances circulaires, sont détectés au chargement du conteneur.  
+Cependant comme Spring injecte les dépendances exprimées en tant que propriétés une fois le bean réellement créé, le conteneur peut être chargé correctement mais générer ultérieurement une exception lorsqu'un bean est demandé.  
+Pour se prémunir contre cette manisfestation tardive des problèmes, les implémentations `ApplicationContext` préinstancient par défaut les beans singletons.  
   
-### Dépendances et configuration en détail  
+  
+### Configuration des dépendances en détail  
   
 Les métadonnées de configuration XML prennent en charge les sous-éléments `<property/>` et `<constructor-arg/>` pour définir les propriétés des beans.  
   
@@ -465,22 +410,8 @@ Le service de conversion de Spring est utilisé pour convertir ces valeurs au ty
     <property name="url" value="jdbc:mysql://localhost:3306/mydb"/>  
 </bean>  
 ```
-  
-L'exemple suivant utilise l'espace de noms p pour une configuration XML plus succincte:  
-  
-```xml  
-<beans xmlns="http://www.springframework.org/schema/beans"  
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
-    xmlns:p="http://www.springframework.org/schema/p"  
-    xsi:schemaLocation="http://www.springframework.org/schema/beans  
-    https://www.springframework.org/schema/beans/spring-beans.xsd">  
-  
-    <bean id="myDataSource" class="org.apache.commons.dbcp.BasicDataSource"  
-        destroy-method="close"  
-        p:driverClassName="com.mysql.jdbc.Driver"  
-        p:url="jdbc:mysql://localhost:3306/mydb"/>  
-</beans>  
-```
+
+#### Properties  
   
 Configurer une instance `java.util.Properties`, comme suit:  
   
@@ -531,16 +462,15 @@ Spécifier le bean cible via l'attribut `bean` de la balise `<ref/>` crée une r
 <ref bean="someBean"/>  
 ```
   
-Spécifier le bean cible via l'attribut `parent` crée une référence à un bean d'un conteneur parent du conteneur actuel.  
-Cette variante de référence de bean est utilisée principalement avec une hiérarchie de conteneurs pour encapsuler un bean du conteneur parent dans un proxy du même nom que le bean parent.  
+Spécifier le bean cible via l'attribut `parent` crée une référence à un bean d'un conteneur parent.  
+Cette variante est utilisée souvent dans une hiérarchie de conteneurs pour encapsuler un bean du conteneur parent dans un proxy du même nom que le bean parent.  
   
 ```xml  
-<!-- in the parent context -->  
+<!-- parent context -->  
 <bean id="accountService" class="com.something.SimpleAccountService"/>  
   
-  
-<!-- in the child (descendant) context -->  
-<bean id="accountService" <!-- bean name is the same as the parent bean -->  
+<!-- child (descendant) context -->  
+<bean id="accountService"> <!-- bean name is the same as the parent bean -->  
     class="org.springframework.aop.framework.ProxyFactoryBean">  
     <property name="target">  
         <ref parent="accountService"/> <!-- notice how we refer to the parent bean -->  
@@ -554,7 +484,7 @@ Un élément `<bean/>` à l'intérieur des éléments `<property/>` ou `<constru
   
 ```xml  
 <bean id="outer" class="...">  
-    <!-- instead of using a reference to a target bean, simply define the target bean inline -->  
+    <!-- instead of using a reference, simply define the target bean inline -->  
     <property name="target">  
         <bean class="com.example.Person"> <!-- this is the inner bean -->  
             <property name="name" value="Fiona Apple"/>  
@@ -571,7 +501,7 @@ Une définition de bean imbriqué ne nécessite pas d'ID ou de nom défini.
   
 #### Les collections  
   
-Les éléments `<list/>`, `<set/>`, `<map/>` et `<props/>` définissent respectivement les propriétés des types Java List, Set, Map et Properties.  
+Les éléments `<list/>`, `<set/>`, `<map/>` et `<props/>` définissent respectivement les propriétés des types Java `List`, `Set`, `Map` et `Properties`.  
   
 ```xml  
 <bean id="moreComplexObject" class="example.ComplexObject">  
@@ -634,7 +564,7 @@ Les valeurs de la collection enfant sont la fusion des éléments parent et enfa
 <beans>  
 ```
   
-> A noter : l'utilisation de l'attribut `merge = true` sur l'élément `<props/>`
+> A noter : l'utilisation de l'attribut `merge="true"` sur l'élément `<props/>`
   
 Ce comportement de fusion s'applique de la même manière aux types `<list/>`, `<map/>` et `<set/>`.  
 Dans le cas spécifique de l'élément `<list/>`, la notion de collection ordonnée de valeurs est conservée. Les valeurs du parent précèdent toutes les valeurs de la liste enfant.  
@@ -699,34 +629,32 @@ On peut aussi contrôler l'initialisation différée au niveau du conteneur en u
   
 ### Câblage automatique (Autowiring)  
   
-Le conteneur Spring peut gérer automatiquement les relations entre les beans collaborant.  
-Spring peut résoudre automatiquement les dépendances en inspectant le contenu de `ApplicationContext`.  
+Spring peut gérer automatiquement les relations entre les beans collaborant et résoudre les dépendances en inspectant le contenu de `ApplicationContext`.  
 Le câblage automatique présente les avantages suivants:  
 - Réduire considérablement la spécification des propriétés ou des arguments de constructeur.  
 - Mettre à jour la configuration à mesure que les objets évoluent.  
-	Par exemple, l'ajout d'une dépendance à une classe peut être satisfaite automatiquement sans modifier la configuration.  
+	En effet, l'ajout d'une dépendance est satisfaite automatiquement sans modifier la configuration.  
   
 Le mode câblage automatique pour une définition de bean est spécifié avec l'attribut `autowire` de l'élément `<bean/>`.  
 La fonctionnalité de câblage automatique a quatre modes.  
   
 | Mode  | Explication |  
 |--     | --          |  
-| `no` | (Par défaut) Pas de câblage automatique. Les références de bean doivent être définies par des éléments ref. La modification du paramètre par défaut n'est pas recommandée car la spécification explicite des collaborateurs donne plus de contrôle et de clarté. |  
-| `byName` | Autowiring par nom de propriété. Spring recherche un bean portant le même nom que la propriété qui doit être câblée automatiquement.|  
-| `byType` | La propriété est câblée automatiquement si exactement un bean du type de propriété existe dans le conteneur. S'il en existe plusieurs, une exception fatale est levée. S'il n'y en a pas, la propriété n'est pas définie.|  
+| `no` | (Par défaut) Pas de câblage automatique. Les références de bean doivent être définies par des éléments `ref`. |  
+| `byName` | Recherche d'un bean portant le même nom que la propriété qui doit être câblée automatiquement.|  
+| `byType` | Câblage automatique si exactement un bean du type de la propriété existe dans le conteneur. S'il en existe plusieurs, une exception fatale est levée. S'il n'y en a pas, la propriété n'est pas définie.|  
 | `constructor` | Analogue à `byType` mais s'applique aux arguments du constructeur. S'il n'y a pas exactement un bean du type d'argument constructeur, une erreur fatale est déclenchée.|  
   
-Avec le mode de câblage automatique byType ou constructeur, on peut câbler des tableaux et des collections typées.  
+Avec le mode de câblage automatique `byType` ou `constructor`, on peut câbler des tableaux et des collections typées.  
 Tous les candidats qui correspondent au type attendu sont fournis pour satisfaire la dépendance.  
 On peut transférer automatiquement des instances de Map si le type de clé est String.  
 Les valeurs d'une Map auto-câblée se composent de tous les beans qui correspondent au type attendu, et les clés de la Map contiennent les noms de bean correspondants.  
   
-**Limitations et inconvénients du câblage automatique**  
+**Limitates et inconvénients du câblage automatique**  
   
-Limites et inconvénients du câblage automatique:  
 - Les dépendances explicites dans les paramètres de propriété et de constructeur remplacent toujours le câblage automatique.  
-- Onne peut pas câbler automatiquement des propriétés simples telles que primitives, chaînes et  classes (et des tableaux de ces propriétés simples).  
-- Le câblage automatique est moins exact que le câblage explicite. Les relations entre objets gérés par Spring ne sont plus documentées explicitement.  
+- On ne peut pas câbler automatiquement des valeurs explicites de propriétés telles que primitives, chaînes et classes.  
+- Les relations entre objets gérés par Spring ne sont plus documentées explicitement.  
 - Les informations de câblage ne sont pas disponibles pour les outils qui de génèrent de la doc.  
 - Plusieurs définitions de bean dans le conteneur peuvent correspondre au type spécifié. Dans ce  scénario, plusieurs options:  
 	- Abandonner le câblage automatique au profit d'un câblage explicite.  
@@ -737,26 +665,26 @@ Limites et inconvénients du câblage automatique:
 **Exclure un bean de l'autowiring**  
   
 Pour exclure un bean de l'autowiring, définir l'attribut `autowire-candidate` à `false`.  
-Le conteneur rend cette définition de bean indisponible au câblage automatique (y compris pour la config par annotation telle que @Autowired).  
-  
-L'attribut `autowire-candidate` affecte uniquement le câblage automatique basé sur le type.  
-L'autowiring par nom injecte un bean si le nom correspond même s'il n'est pas marqué comme candidat.  
+> L'attribut `autowire-candidate` affecte uniquement le câblage automatique basé sur le type.  
+> L'autowiring par nom injecte un bean si le nom correspond même s'il n'est pas marqué comme candidat.  
   
 L'élément `<beans/>` de niveau supérieur accepte un ou plusieurs modèles dans son attribut `default-autowire-candidates`.  
 Exemple pour limiter le statut de candidat à tout bean dont le nom se termine par Repository, indiquer `default-autowire-candidates=*Repository`.  
-Pour fournir plusieurs modèles, définissez-les dans une liste séparée par des virgules.  
-Une valeur explicite pour l'attribut `autowire-candidate` d'un bean a toujours la priorité.  
+Pour fournir plusieurs modèles, les définir dans une liste séparée par des virgules.  
+Une valeur explicite `autowire-candidate` au niveau d'un bean a toujours la priorité.  
   
   
 ### Injection de méthode  
   
-Lorsqu'un singleton a besoin de collaborer avec un autre singleton ou qu'un prototype doit collaborer avec un autre prototype, la dépendance est gérée en définissant un bean comme propriété de l'autre.  
+En général, une dépendance se gère en définissant un bean collaborateur comme propriété de l'autre.  
 Un problème survient lorsque les cycles de vie des beans sont différents.  
   
 Supposons que le singleton A ait besoin d'utiliser le prototype B.  
 Le conteneur crée le singleton A une seule fois, et ne définit ses propriétés qu'une seule fois.  
-Le conteneur ne peut fournir au bean A qu'une seule instance du bean B au moment de son initialisation.  
+Il ne fournit donc au bean A qu'une seule instance du bean B, celle créée au moment de son initialisation.  
   
+#### Principe de type Service Locator avec `ApplicationContextAware`  
+
 Une solution est de renoncer à l'inversion de contrôle en implémentant l'interface `ApplicationContextAware` et en effectuant un appel `getBean("B")` au conteneur pour demander une nouvelle instance du bean B chaque fois que le bean A en a besoin.  
   
 ```java  
@@ -766,10 +694,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;  
 import org.springframework.context.ApplicationContextAware;  
   
-public class CommandManager implements ApplicationContextAware {  
-  
-    private ApplicationContext applicationContext;  
-  
+public class CommandManager implements ApplicationContextAware {   
+    private ApplicationContext applicationContext;    
     public Object process(Map commandState) {  
         // grab a new instance of the appropriate Command  
         Command command = createCommand();  
@@ -789,40 +715,36 @@ public class CommandManager implements ApplicationContextAware {
 }  
 ```
   
-Ce qui précède n'est pas souhaitable, car le code métier est couplé à Spring.  
-  
-L'injection de méthode, une fonctionnalité avancée du conteneur Spring IoC, permet de gérer proprement ce cas d'utilisation.  
+Ceci crée un couplage fort du code métier sur le framework Spring.    
+L'injection de méthode est une fonctionnalité qui permet de gérer proprement ce cas d'utilisation.  
   
 #### Injection de méthode de recherche (Lookup method)  
   
-L'injection de méthode de recherche est la capacité du conteneur à redéfinir les méthodes sur les beans gérés en renvoyant le résultat de la recherche d'un autre bean nommé dans le conteneur.  
-La recherche implique généralement un prototype, comme dans le scénario précédent.  
+L'injection de méthode de recherche consiste à redéfinir une méthode sur un bean en renvoyant le résultat de la recherche d'un autre bean nommé dans le conteneur.  
+
 Spring implémente l'injection de méthode en utilisant la bibliothèque CGLIB pour générer dynamiquement une sous-classe qui redéfinit la méthode.  
   
-- Pour que cet héritage dynamique fonctionne, la classe que Spring cherche à sous-classer ne doit pas être finale et la méthode à redéfinir non plus.  
-- Le test unitaire d'une classe qui a une méthode abstraite oblige à la sous-classer et à fournir une implémentation de la méthode abstraite.  
-- Des méthodes concrètes sont également nécessaires pour le scannage des composants, ce qui requiert des classes concrètes.  
-- Une autre limitation essentielle est que les méthodes de recherche ne fonctionnent pas avec les méthodes de fabrique et en particulier avec les méthodes `@Bean` dans les classes de configuration, car, dans ce cas, le conteneur ne fait pas l'instanciation et ne peut donc pas générer de sous-classe à la volée.  
+> Pour que cet héritage dynamique fonctionne, la classe que Spring cherche à sous-classer ne doit pas être finale et la méthode à redéfinir non plus.  
+> Une autre limitation est que les méthodes de recherche ne fonctionnent pas avec les méthodes de fabrique statiques ni avec les méthodes `@Bean` statiques car dans ce cas, le conteneur ne fait pas l'instanciation et ne peut donc pas générer de sous-classe à la volée.  
   
 Dans le cas de la classe `CommandManager` précédente, le conteneur Spring remplace dynamiquement l'implémentation de la méthode `createCommand()`.  
   
 ```java  
 // no more Spring imports!  
-public abstract class CommandManager {  
-  
+public abstract class CommandManager {    
     public Object process(Object commandState) {  
         // grab a new instance of the appropriate Command interface  
         Command command = createCommand();  
-        // set the state on the (hopefully brand new) Command instance  
+        // set the state on the new Command instance  
         command.setState(commandState);  
         return command.execute();  
     }  
-    // but where is the implementation of this method?  
+    // where is the implementation of this method ?  
     protected abstract Command createCommand();  
 }  
 ```
   
-Dans la classe client, la méthode à injecter nécessite une signature de la forme suivante:  
+Dans la classe cliente, la méthode à injecter nécessite une signature de la forme suivante:  
 `<public|protected> [abstract] <return-type> theMethodName(no-arguments);`
   
 Si la méthode est abstraite, la sous-classe générée dynamiquement implémente la méthode.  
@@ -840,7 +762,7 @@ Sinon, la sous-classe générée dynamiquement remplace la méthode concrète d�
 ```
   
 Le bean identifié comme `commandManager` appelle sa propre méthode `createCommand()` chaque fois qu'il a besoin d'une nouvelle instance du bean `myCommand`.  
-Le bean `myCommand` est déclaré en tant que prototype pour renvoyer une nouvelle instance à chaque appel.  
+Le bean `myCommand` est déclaré en tant que `prototype` pour renvoyer une nouvelle instance à chaque appel.  
   
 Dans le modèle par annotations, une méthode de recherche se déclare avec l'annotation `@Lookup`
   
@@ -856,7 +778,7 @@ public abstract class CommandManager {
 }  
 ```
   
-Ou plus idiomatiquement, on peut compter sur la résolution du bean cible par rapport au type de retour déclaré de la méthode de recherche:  
+On peut aussi compter sur la résolution de bean par rapport au type de retour de la méthode de recherche:  
   
 ```java  
 public abstract class CommandManager {  
@@ -873,58 +795,16 @@ public abstract class CommandManager {
 A noter qu'il faut généralement déclarer ces méthodes de recherche annotées avec une implémentation concrète, afin qu'elles soient compatibles avec les règles de scannage des composants où les classes abstraites sont ignorées par défaut.  
   
   
-#### Remplacement de méthode arbitraire  
-  
-Une autre forme d'injection de méthode est la possibilité de remplacer des méthodes arbitraires par d'autres implémentations.  
-L'élément `replaced-method` permet de remplacer une implémentation de méthode existante par une autre.  
-  
-```java  
-public class MyValueCalculator {  
-    public String computeValue(String input) {  
-        // some real code...  
-    }  
-}  
-```
-  
-Une classe qui implémente l'interface `org.springframework.beans.factory.support.MethodReplacer` fournit la nouvelle définition de méthode  
-  
-```java  
-public class ReplacementComputeValue implements MethodReplacer {  
-    public Object reimplement(Object o, Method m, Object[] args) throws Throwable {  
-        // get the input value, work with it, and return a computed result  
-        String input = (String) args[0];  
-        ...  
-        return ...;  
-    }  
-}  
-```
-  
-Définition du bean pour déployer la classe d'origine et spécifier le remplacement de méthode:  
-  
-```xml  
-<bean id="myValueCalculator" class="x.y.z.MyValueCalculator">  
-    <!-- arbitrary method replacement -->  
-    <replaced-method name="computeValue" replacer="replacementComputeValue">  
-        <arg-type>String</arg-type>  
-    </replaced-method>  
-</bean>  
-<bean id="replacementComputeValue" class="a.b.c.ReplacementComputeValue"/>  
-```
-Un ou plusieurs éléments `<arg-type/>` dans l'élément `<replaced-method/>` indiquent la signature de la méthode remplacée (nécessaire que si la méthode est surchargée avec plusieurs variantes).  
-  
-  
 ## Portées des Beans  
-  
-L'idée qu'une définition de bean est une recette est importante, car on peut créer de nombreuses instances d'objet à partir d'une seule recette.  
   
 Les beans peuvent être déployés dans l'une des six portées prises en charge par Spring (quatre ne sont disponibles que dans un contexte Web)  
   
-| Portée | Description |  
-| -- | -- |  
+| Portée    | Description |  
+| --        | --          |  
 | singleton | (Par défaut) Une seule instance d'objet pour chaque conteneur Spring IoC|  
 | prototype | Une définition de bean fournit n'importe quel nombre d'instances d'objet|  
 | request   | Une instance de bean est associée au cycle de vie d'une requête HTTP (Web)|  
-| session | Une instance de bean est associée au cycle de vie d'une session HTTP (Web)|  
+| session   | Une instance de bean est associée au cycle de vie d'une session HTTP (Web)|  
 | application | Une instance de bean est associée au cycle de vie d'une ServletContext HTTP (Web)|  
 | websocket | Une instance de bean est associée au cycle de vie d'une WebSocket (Web)|  
   
@@ -971,7 +851,7 @@ Sinon une `IllegalStateException` est levée.
   
 #### Configuration Web initiale  
   
-Pour prendre en charge ce type de portée Web, une configuration initiale mineure est requise avant de définir vos beans.  
+Pour prendre en charge ce type de portée Web, une configuration initiale mineure est requise avant de définir les beans.  
 - Pour accéder aux beans d'une requête traitée par Spring `DispatcherServlet` dans Spring Web MVC, aucune configuration spéciale n'est nécessaire. `DispatcherServlet` expose déjà tous les états pertinents.  
 - Pour un moteur Servlet 2.5 et des requêtes traitées en dehors du `DispatcherServlet`, il faut référencer un `org.springframework.web.context.request.RequestContextListener`.  
 - Pour Servlet 3.0+, ça peut être effectué par programme à l'aide de l'interface `WebApplicationInitializer`.  
