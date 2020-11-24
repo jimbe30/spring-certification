@@ -19,7 +19,7 @@ Dans Spring, les objets gérés par le conteneur Spring IoC sont appelés beans 
 - Un bean est un objet instancié, assemblé et géré par un conteneur Spring IoC.  
 - Les beans et leurs dépendances sont spécifiés dans les métadonnées de configuration utilisées par le conteneur.  
   
-## Présentation du conteneur `ApplicationContext`  
+## Présentation du conteneur ApplicationContext  
   
 `org.springframework.context.ApplicationContext` représente le conteneur Spring IoC et est responsable d'instancier, de configurer et d'assembler les beans.  
   
@@ -364,14 +364,14 @@ L'avantage de l'injection par setter est que les dépendances de la classe sont 
   
 La résolution de dépendances s'effectue comme suit:  
 - `ApplicationContext` est créé et initialisé avec les données de configuration décrivant les beans.  
-- Pour chaque bean, les dépendances sont exprimées sous la forme de propriétés, d'arguments de constructeur ou d'arguments de méthode de fabrique. Ces dépendances sont fournies au bean.  
+- Pour chaque bean, les dépendances sont exprimées sous la forme de propriétés, d'arguments de constructeur ou de méthode de fabrique. Ces dépendances sont fournies au bean au moment de sa création.  
 - Chaque propriété ou argument de constructeur est une valeur explicite ou une référence à un autre bean.  
-	- Chaque argument qui est une valeur est converti de son format spécifié à son type réel avec un `PropertyEditor`.  
-	- Spring peut convertir une valeur `String` dans tous les types intégrés (`int`, `long`, `String`, `boolean`, etc).  
+- Chaque argument qui est une valeur est converti de son format spécifié à son type réel avec un `PropertyEditor`.  
+	Spring peut convertir une valeur `String` dans tous les types intégrés (`int`, `long`, `String`, `boolean`, etc).  
 - Les propriétés du bean elles-mêmes ne sont définies qu'après la création du bean.  
   
 Spring valide la configuration de chaque bean lors de la création du conteneur:  
-- Les beans de portée **singleton** et déclarés instantanés (mode par défaut) sont créés au chargement du conteneur.  
+- Les beans de portée **singleton** et déclarés préinstanciés (mode par défaut) sont créés au chargement du conteneur.  
 - Les autres beans ne sont créés que lorsqu'ils sont invoqués.  
 - La création d'un bean provoque la création d'un graphe de beans qui représente l'ensemble des dépendances.  
   
@@ -430,9 +430,9 @@ Configurer une instance `java.util.Properties`, comme suit:
 Spring convertit le texte à l'intérieur de `<value/>` en une instance `java.util.Properties`.  
 C'est l'un des rares cas où Spring privilégie l'utilisation de `<value/>` imbriqué par rapport à l'attribut `value`.  
   
-#### L'élément `idref`
+#### Elément `idref`
   
-L'élément `idref` est un moyen de passer sans erreur l'id d'un bean (une valeur de chaîne, pas une référence) à un élément <constructor-arg/> ou <property/>.  
+L'élément `idref` est un moyen de passer sans erreur l'id d'un bean (une valeur de chaîne, pas une référence) à un élément `<constructor-arg/>` ou `<property/>`.  
   
 ```xml  
 <bean id="theTargetBean" class="..."/>  
@@ -602,7 +602,8 @@ Pour exprimer une dépendance sur plusieurs beans, fournir une liste de noms de 
 ```
   
 L'attribut `depends-on` peut spécifier à la fois une dépendance d'initialisation et pour les singletons uniquement, une dépendance de destruction correspondante. Les beans qui définissent une relation dépendante avec un bean donné sont détruits en premier. Ainsi, on peut également contrôler l'ordre d'arrêt.  
-
+  
+  
 ### Beans à initialisation différéee  
 
 Par défaut, `ApplicationContext` crée instantanément les beans singleton lors du processus d'initialisation.  
@@ -611,8 +612,7 @@ Lorsque ce comportement n'est pas souhaitable, la pré-instanciation d'un bean s
 Le conteneur IoC crée dans ce cas une instance de bean lors de sa première demande, plutôt qu'au démarrage.  
 Ce comportement est contrôlé par l'attribut `lazy-init` sur l'élément `<bean/>`:  
   
-```xml  
-  
+```xml    
 <bean id="lazy" class="com.something.ExpensiveToCreateBean" lazy-init="true"/>  
 <bean name="not.lazy" class="com.something.AnotherBean"/>  
 ```
@@ -650,7 +650,7 @@ Tous les candidats qui correspondent au type attendu sont fournis pour satisfair
 On peut transférer automatiquement des instances de Map si le type de clé est String.  
 Les valeurs d'une Map auto-câblée se composent de tous les beans qui correspondent au type attendu, et les clés de la Map contiennent les noms de bean correspondants.  
   
-**Limitates et inconvénients du câblage automatique**  
+**Limites et inconvénients du câblage automatique**  
   
 - Les dépendances explicites dans les paramètres de propriété et de constructeur remplacent toujours le câblage automatique.  
 - On ne peut pas câbler automatiquement des valeurs explicites de propriétés telles que primitives, chaînes et classes.  
@@ -672,127 +672,6 @@ L'élément `<beans/>` de niveau supérieur accepte un ou plusieurs modèles dan
 Exemple pour limiter le statut de candidat à tout bean dont le nom se termine par Repository, indiquer `default-autowire-candidates=*Repository`.  
 Pour fournir plusieurs modèles, les définir dans une liste séparée par des virgules.  
 Une valeur explicite `autowire-candidate` au niveau d'un bean a toujours la priorité.  
-  
-  
-### Injection de méthode  
-  
-En général, une dépendance se gère en définissant un bean collaborateur comme propriété de l'autre.  
-Un problème survient lorsque les cycles de vie des beans sont différents.  
-  
-Supposons que le singleton A ait besoin d'utiliser le prototype B.  
-Le conteneur crée le singleton A une seule fois, et ne définit ses propriétés qu'une seule fois.  
-Il ne fournit donc au bean A qu'une seule instance du bean B, celle créée au moment de son initialisation.  
-  
-#### Principe de type Service Locator avec `ApplicationContextAware`  
-
-Une solution est de renoncer à l'inversion de contrôle en implémentant l'interface `ApplicationContextAware` et en effectuant un appel `getBean("B")` au conteneur pour demander une nouvelle instance du bean B chaque fois que le bean A en a besoin.  
-  
-```java  
-//uses a stateful Command-style class to perform some processing  
-  
-import org.springframework.beans.BeansException;  
-import org.springframework.context.ApplicationContext;  
-import org.springframework.context.ApplicationContextAware;  
-  
-public class CommandManager implements ApplicationContextAware {   
-    private ApplicationContext applicationContext;    
-    public Object process(Map commandState) {  
-        // grab a new instance of the appropriate Command  
-        Command command = createCommand();  
-        // set the state on the brand new Command instance  
-        command.setState(commandState);  
-        return command.execute();  
-    }  
-    protected Command createCommand() {  
-        // notice the Spring API dependency!  
-        return this.applicationContext.getBean("command", Command.class);  
-    }  
-    @Override  
-    public void setApplicationContext(  
-            ApplicationContext applicationContext) throws BeansException {  
-        this.applicationContext = applicationContext;  
-    }  
-}  
-```
-  
-Ceci crée un couplage fort du code métier sur le framework Spring.    
-L'injection de méthode est une fonctionnalité qui permet de gérer proprement ce cas d'utilisation.  
-  
-#### Injection de méthode de recherche (Lookup method)  
-  
-L'injection de méthode de recherche consiste à redéfinir une méthode sur un bean en renvoyant le résultat de la recherche d'un autre bean nommé dans le conteneur.  
-
-Spring implémente l'injection de méthode en utilisant la bibliothèque CGLIB pour générer dynamiquement une sous-classe qui redéfinit la méthode.  
-  
-> Pour que cet héritage dynamique fonctionne, la classe que Spring cherche à sous-classer ne doit pas être finale et la méthode à redéfinir non plus.  
-> Une autre limitation est que les méthodes de recherche ne fonctionnent pas avec les méthodes de fabrique statiques ni avec les méthodes `@Bean` statiques car dans ce cas, le conteneur ne fait pas l'instanciation et ne peut donc pas générer de sous-classe à la volée.  
-  
-Dans le cas de la classe `CommandManager` précédente, le conteneur Spring remplace dynamiquement l'implémentation de la méthode `createCommand()`.  
-  
-```java  
-// no more Spring imports!  
-public abstract class CommandManager {    
-    public Object process(Object commandState) {  
-        // grab a new instance of the appropriate Command interface  
-        Command command = createCommand();  
-        // set the state on the new Command instance  
-        command.setState(commandState);  
-        return command.execute();  
-    }  
-    // where is the implementation of this method ?  
-    protected abstract Command createCommand();  
-}  
-```
-  
-Dans la classe cliente, la méthode à injecter nécessite une signature de la forme suivante:  
-`<public|protected> [abstract] <return-type> theMethodName(no-arguments);`
-  
-Si la méthode est abstraite, la sous-classe générée dynamiquement implémente la méthode.  
-Sinon, la sous-classe générée dynamiquement remplace la méthode concrète définie dans la classe d'origine.  
-  
-```xml  
-<!-- a stateful bean deployed as a prototype (non-singleton) -->  
-<bean id="myCommand" class="fiona.apple.AsyncCommand" scope="prototype">  
-    <!-- inject dependencies here as required -->  
-</bean>  
-<!-- commandProcessor uses statefulCommandHelper -->  
-<bean id="commandManager" class="fiona.apple.CommandManager">  
-    <lookup-method name="createCommand" bean="myCommand"/>  
-</bean>  
-```
-  
-Le bean identifié comme `commandManager` appelle sa propre méthode `createCommand()` chaque fois qu'il a besoin d'une nouvelle instance du bean `myCommand`.  
-Le bean `myCommand` est déclaré en tant que `prototype` pour renvoyer une nouvelle instance à chaque appel.  
-  
-Dans le modèle par annotations, une méthode de recherche se déclare avec l'annotation `@Lookup`
-  
-```java  
-public abstract class CommandManager {  
-    public Object process(Object commandState) {  
-        Command command = createCommand();  
-        command.setState(commandState);  
-        return command.execute();  
-    }  
-    @Lookup("myCommand")  
-    protected abstract Command createCommand();  
-}  
-```
-  
-On peut aussi compter sur la résolution de bean par rapport au type de retour de la méthode de recherche:  
-  
-```java  
-public abstract class CommandManager {  
-    public Object process(Object commandState) {  
-        MyCommand command = createCommand();  
-        command.setState(commandState);  
-        return command.execute();  
-    }  
-    @Lookup  
-    protected abstract MyCommand createCommand();  
-}  
-```
-  
-A noter qu'il faut généralement déclarer ces méthodes de recherche annotées avec une implémentation concrète, afin qu'elles soient compatibles avec les règles de scannage des composants où les classes abstraites sont ignorées par défaut.  
   
   
 ## Portées des Beans  
@@ -837,12 +716,6 @@ Pour ceci, utiliser un post-processeur personnalisé qui contient une référenc
 Le rôle de Spring en ce qui concerne un prototype est semblable à l'opérateur Java `new`.  
 Le cycle de vie au-delà de ce point doit être géré par le client.  
   
-### Singleton avec dépendances Prototype-bean  
-  
-Pour les beans singleton avec des dépendances sur des beans prototypes, les dépendances sont résolues au moment de l'instanciation.  
-Le prototype injecté à la création du singleton est la seule instance qui soit fournie au singleton.  
-  
-Pour que le bean à portée singleton acquière une nouvelle instance du prototype à plusieurs reprises lors de l'exécution, il faut utiliser l'injection de méthode de recherche (`lookup method injection`)  
   
 ### Portées de requête, de session, d'application et WebSocket  
   
@@ -929,68 +802,6 @@ public class AppPreferences {
 }  
 ```
   
-#### Beans à portée en tant que dépendances  
-  
-Pour injecter (par exemple) un bean de portée requête HTTP dans un autre bean de portée plus large, il faut injecter un proxy AOP à la place du bean cible.  
-Le proxy doit exposer la même interface publique que l'objet cible et également pouvoir récupérer l'objet cible réel ayant la portée appropriée (telle qu'une requête HTTP) pour déléguer les appels de méthode à l'objet réel.  
-  
-On peut utiliser `<aop:scoped-proxy/>` sur un bean prototype, chaque appel de méthode sur le proxy partagé conduisant à la création d'une nouvelle instance cible vers laquelle l'appel est ensuite transféré.  
-  
-> Les proxys à portée ne sont pas le seul moyen d'accéder aux beans de portée plus courte en toute sécurité.  
-> Le point d'injection (argument du constructeur, du setter ou champ autowired) peut être déclaré comme `ObjectFactory<MyTargetBean>`, permettant un appel à `getObject()` pour récupérer l'instance à chaque fois que cela est nécessaire.  
-  
-Il est important de comprendre le pourquoi et le comment de la configuration suivante:  
-  
-```xml  
-<beans xmlns="http://www.springframework.org/schema/beans"  
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
-    xmlns:aop="http://www.springframework.org/schema/aop"  
-    xsi:schemaLocation="http://www.springframework.org/schema/beans  
-        https://www.springframework.org/schema/beans/spring-beans.xsd  
-        http://www.springframework.org/schema/aop  
-        https://www.springframework.org/schema/aop/spring-aop.xsd">  
-  
-    <!-- an HTTP Session-scoped bean exposed as a proxy -->  
-    <bean id="userPreferences" class="com.something.UserPreferences" scope="session">  
-        <!-- instructs the container to proxy the surrounding bean -->  
-        <aop:scoped-proxy/>  
-    </bean>  
-  
-    <!-- a singleton-scoped bean injected with a proxy to the above bean -->  
-    <bean id="userService" class="com.something.SimpleUserService">  
-        <!-- a reference to the proxied userPreferences bean -->  
-        <property name="userPreferences" ref="userPreferences"/>  
-    </bean>  
-</beans>  
-```
-  
-Pour créer un tel proxy, il faut insérer un élément `<aop:scoped-proxy/>` dans une définition de bean.  
-Les beans de portée `request`, `session` et `custom` nécessitent cet élément.  
-Ainsi, le conteneur crée un objet proxy qui expose la même interface publique que la dépendance `UserPreferences` et qui est capable de récupérer la véritable dépendance dans la portée qui convient (requête, session, ...).  
-Le conteneur injecte ce proxy dans le singleton `userManager` qui ignore que cette référence est un proxy.  
-L'invocation d'une méthode sur l'objet injecté appelle en fait une méthode sur le proxy.  
-Le proxy récupère le véritable objet cible et lui délègue l'invocation de la méthode.  
-  
-#### Choix du type de proxy à créer  
-  
-Par défaut, lorsqu'un bean est marqué avec l'élément `<aop:scoped-proxy/>`, le conteneur Spring crée un proxy de classe basé sur CGLIB.  
-Les proxies CGLIB n'interceptent que les appels de méthodes publiques  
-Les appels de méthodes non publiques ne sont donc pas délégués à l'objet cible réel.  
-  
-Le conteneur Spring peut aussi créer des proxies standards basés sur l'interface JDK, en spécifiant `false` sur l'attribut `proxy-target-class` de l'élément `<aop:scoped-proxy/>`.  
-Cependant, la classe du bean scoped doit pour ceci implémenter au moins une interface et les collaborateurs dans lesquels le bean est injecté doivent référencer le bean via l'une de ses interfaces.  
-  
-```xml  
-<!-- DefaultUserPreferences implements the UserPreferences interface -->  
-<bean id="userPreferences" class="com.stuff.DefaultUserPreferences" scope="session">  
-    <aop:scoped-proxy proxy-target-class="false"/>  
-</bean>  
-  
-<bean id="userManager" class="com.stuff.UserManager">  
-    <property name="userPreferences" ref="userPreferences"/>  
-</bean>  
-```
-  
 ### Portées personnalisées  
   
 Le mécanisme de portée du bean est extensible.  
@@ -1019,6 +830,169 @@ Définition de bean qui adhère aux règles de la portée personnalisée:
   
 ```xml  
 <bean id = "..." class = "..." scope = "thread">  
+```
+  
+## Collaborateurs et dépendances de portées différentes  
+
+En général, une dépendance est gérée en définissant un bean collaborateur comme propriété de l'autre.  
+Un problème survient lorsque les cycles de vie des beans sont différents.   
+
+Par exemple, pour les beans `singleton` avec des dépendances sur des beans `prototype`, les dépendances sont résolues au moment de l'instanciation.  
+Le prototype injecté à la création du singleton est donc la seule instance qui soit fournie au singleton.  
+  
+Pour que le singleton acquière une nouvelle instance du prototype à chaque reprise lors de l'exécution, plusieurs moyens existent :
+- Utiliser un mécanisme de type Service Locator qui récupère une instance nouvelle à chaque fois
+- Utiliser l'injection de méthode de recherche `lookup method injection`  
+- Utiliser un proxy de portée AOP  
+  
+### Mécanisme de type Service Locator avec `ApplicationContextAware`  
+
+Cette solution renonce à l'inversion de contrôle en implémentant l'interface `ApplicationContextAware` et en effectuant un appel `getBean("B")` au conteneur pour demander une nouvelle instance du bean B chaque fois que le bean A en a besoin.  
+  
+```java  
+public class CommandManager implements ApplicationContextAware {   
+    private ApplicationContext applicationContext;    
+    public Object process(Map commandState) {  
+        // grab a new instance of the appropriate Command  
+        Command command = createCommand();  
+        // set the state on the brand new Command instance  
+        command.setState(commandState);  
+        return command.execute();  
+    }  
+    protected Command createCommand() {  
+        // notice the Spring API dependency!  
+        return this.applicationContext.getBean("command", Command.class);  
+    }  
+    @Override  
+    public void setApplicationContext(  
+            ApplicationContext applicationContext) throws BeansException {  
+        this.applicationContext = applicationContext;  
+    }  
+}  
+```
+  
+Inconvénient : ceci crée un couplage fort du code métier sur le framework Spring.  
+  
+### Injection de méthode de recherche (Lookup method)  
+  
+L'injection de méthode de recherche consiste à redéfinir une méthode de bean qui renvoie le résultat de la recherche d'un autre bean nommé dans le conteneur.  
+
+Spring implémente l'injection de méthode en utilisant la bibliothèque CGLIB pour générer dynamiquement une sous-classe qui redéfinit la méthode.  
+  
+> Pour que cet héritage dynamique fonctionne, la classe que Spring cherche à sous-classer ne doit pas être finale et la méthode à redéfinir non plus.  
+> Une autre limitation est que les méthodes de recherche ne fonctionnent pas avec les méthodes de fabrique statiques ni avec les méthodes `@Bean` statiques car dans ce cas, le conteneur ne fait pas l'instanciation et ne peut donc pas générer de sous-classe à la volée.  
+  
+Dans le cas de la classe `CommandManager` précédente, le conteneur Spring remplace dynamiquement l'implémentation de la méthode `createCommand()`.  
+  
+```java  
+// no more Spring imports!  
+public abstract class CommandManager {    
+    public Object process(Object commandState) {  
+        // grab a new instance of the appropriate Command interface  
+        Command command = createCommand();  
+        // set the state on the new Command instance  
+        command.setState(commandState);  
+        return command.execute();  
+    }  
+    // where is the implementation of this method ?  
+    protected abstract Command createCommand();  
+}  
+```
+  
+Dans la classe cliente, la méthode à injecter nécessite une signature de la forme suivante:  
+`<public|protected> [abstract] <return-type> theMethodName(no-arguments);`
+  
+Si la méthode est abstraite, la sous-classe générée dynamiquement implémente la méthode.  
+Sinon, la sous-classe générée dynamiquement remplace la méthode concrète définie dans la classe d'origine.  
+  
+```xml  
+<!-- a stateful bean deployed as a prototype (non-singleton) -->  
+<bean id="myCommand" class="fiona.apple.AsyncCommand" scope="prototype">  
+    <!-- inject dependencies here as required -->  
+</bean>  
+<!-- commandProcessor uses statefulCommandHelper -->  
+<bean id="commandManager" class="fiona.apple.CommandManager">  
+    <lookup-method name="createCommand" bean="myCommand"/>  
+</bean>  
+```
+  
+Le bean identifié comme `commandManager` appelle sa propre méthode `createCommand()` chaque fois qu'il a besoin d'une nouvelle instance du bean `myCommand`.  
+Le bean `myCommand` est déclaré en tant que `prototype` pour renvoyer une nouvelle instance à chaque appel.  
+  
+Dans le modèle par annotations, une méthode de recherche se déclare avec l'annotation `@Lookup`
+  
+```java  
+public abstract class CommandManager {  
+    public Object process(Object commandState) {  
+        Command command = createCommand();  
+        command.setState(commandState);  
+        return command.execute();  
+    }  
+    @Lookup("myCommand")  
+    protected abstract Command createCommand();  
+}  
+```
+  
+On peut aussi ne pas fournir de nom en s'appuyant sur la résolution de bean par rapport au type de retour  
+  
+```java  
+    @Lookup  
+    protected abstract MyCommand createCommand();  
+}  
+```
+  
+A noter qu'il faut généralement déclarer ces méthodes de recherche annotées avec une implémentation concrète, afin qu'elles soient compatibles avec les règles de scannage des composants où les classes abstraites sont ignorées par défaut.  
+  
+### Proxy de portée AOP  
+
+Pour injecter un bean de portée courte dans un autre bean de portée plus large, il faut injecter un proxy AOP à la place du bean cible.  
+Le proxy doit exposer la même interface publique que l'objet cible et également pouvoir récupérer l'objet cible réel avec la portée appropriée (tel qu'un prototype) pour déléguer les appels de méthode à l'objet réel.  
+  
+On peut utiliser `<aop:scoped-proxy/>` sur un prototype, chaque appel de méthode sur le proxy conduisant à la création d'une nouvelle instance cible vers laquelle l'appel est ensuite transféré.  
+  
+> Les proxys de portée ne sont pas le seul moyen d'accéder aux beans de portée plus courte en toute sécurité.  
+> Le point d'injection (argument du constructeur, du setter ou champ autowired) peut être déclaré comme `ObjectFactory<MyTargetBean>`, permettant un appel à `getObject()` pour récupérer l'instance à chaque fois que c'est nécessaire.  
+  
+```xml  
+<beans ...>    
+    <!-- an HTTP Session-scoped bean exposed as a proxy -->  
+    <bean id="userPreferences" class="com.something.UserPreferences" scope="session">  
+        <!-- instructs the container to proxy the surrounding bean -->  
+        <aop:scoped-proxy/>  
+    </bean>    
+    <!-- a singleton-scoped bean injected with a proxy to the above bean -->  
+    <bean id="userService" class="com.something.SimpleUserService">  
+        <!-- a reference to the proxied userPreferences bean -->  
+        <property name="userPreferences" ref="userPreferences"/>  
+    </bean>  
+</beans>  
+```
+  
+Pour créer un tel proxy, il faut insérer un élément `<aop:scoped-proxy/>` dans une définition de bean.  
+Les beans de portée `request`, `session` et `custom` nécessitent cet élément.  
+Ainsi, le conteneur crée un objet proxy qui expose la même interface publique que la dépendance `UserPreferences` et qui est capable de récupérer la véritable dépendance dans la portée qui convient (requête, session, ...).  
+Le conteneur injecte ce proxy dans le singleton `userManager` qui ignore que cette référence est un proxy.  
+L'invocation d'une méthode sur l'objet injecté appelle en fait une méthode sur le proxy.  
+Le proxy récupère le véritable objet cible et lui délègue l'invocation de la méthode.  
+  
+#### Choix du type de proxy à créer  
+  
+Par défaut, lorsqu'un bean est marqué avec l'élément `<aop:scoped-proxy/>`, le conteneur Spring crée un proxy de classe basé sur CGLIB.  
+Les proxies CGLIB n'interceptent que les appels de méthodes publiques.  
+Les appels de méthodes non publiques ne sont donc pas délégués à l'objet cible réel.  
+  
+Le conteneur Spring peut aussi créer des proxies standards basés sur l'interface JDK, en spécifiant `false` sur l'attribut `proxy-target-class` de l'élément `<aop:scoped-proxy/>`.  
+Cependant, la classe du bean scoped doit pour ceci implémenter au moins une interface et les collaborateurs dans lesquels le bean est injecté doivent référencer le bean via l'une de ses interfaces.  
+  
+```xml  
+<!-- DefaultUserPreferences implements the UserPreferences interface -->  
+<bean id="userPreferences" class="com.stuff.DefaultUserPreferences" scope="session">  
+    <aop:scoped-proxy proxy-target-class="false"/>  
+</bean>  
+  
+<bean id="userManager" class="com.stuff.UserManager">  
+    <property name="userPreferences" ref="userPreferences"/>  
+</bean>  
 ```
   
 ## Personnalisation de la nature d'un bean  
